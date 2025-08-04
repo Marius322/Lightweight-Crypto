@@ -22,37 +22,37 @@ def generate_col1_columns(k):
 
     Returns
     -------
-    col_dict : A dict containing all A_i_j ops assigned to their columns
+    col1_dict : A dict containing all A_i_j ops assigned to their columns
 
     '''
     col1_dict = {}
     for cl in range(2 * k - 2):
         col1_entries = []
-        if cl == 0 or cl == 2 * k - 2:
+        
+        # Case 1: A_i_j does not exist for Col(0)
+        if cl == 0:
             col1_dict[cl] = col1_entries
             continue
+        
+        # Case 2: A_i_j from Col(1) to Col(k-1)
         if 1 <= cl <= k - 1:
             base_i, base_j = k - cl, k
             n = 0
-            while True:
-                i = base_i + n
-                j = base_j - n
-                if j > i:
-                    col1_entries.append([1, i, j])
-                    n += 1
-                else:
-                    break
-        else:  # k <= cl <= 2*k-3
-            j0 = 2 * k - 1 - cl
+
+        # Case 3: A_i_j from Col(k) to Col(2k - 3)
+        else:  
+            base_i, base_j = 1, 2 * k - 1 - cl
             n = 0
-            while True:
-                i = 1 + n
-                j = j0 - n
-                if j > i:
-                    col1_entries.append([1, i, j])
-                    n += 1
-                else:
-                    break
+            
+        while True:
+            i = base_i + n
+            j = base_j - n
+            if j > i:
+                col1_entries.append([1, i, j])
+                n += 1
+            else:
+                break
+        
         col1_dict[cl] = col1_entries
     return col1_dict
 
@@ -71,14 +71,21 @@ def generate_col2_columns(k):
     col2_dict = {}
     for r in range(2 * k - 2):
         col2_entries = []
-        if r < 4 or r > 2 * k - 3:
+        
+        # Case 1: N2_i_j does not exist for Col(0) to Col(3)
+        if r < 4:
             col2_dict[r] = col2_entries
             continue
+        
+        # Case 2: N2_i_j from Col(4) to Col(k)
         if r <= k:
             base_i, base_j = k - r + 1, k
+        
+        # Case 3: N2_i_j from Col(k + 1) to Col(2k-2)
         else:
             base_i, base_j = 1, 2 * k - r
         n = 0
+        
         while True:
             i = base_i + n
             j = base_j - n
@@ -87,6 +94,7 @@ def generate_col2_columns(k):
                 n += 1
             else:
                 break
+        
         col2_dict[r] = col2_entries
     return col2_dict
 
@@ -107,14 +115,17 @@ def generate_col3_columns(k, col2_dict):
     '''
     col3_dict = {}
     used_keys = set()
+    
     for r in range(7, 2 * k-2):
         prev2 = col2_dict.get(r - 1, [])
         prev3 = col3_dict.get(r - 1, [])
         target = len(prev2) + len(prev3) - 2
+        
         if target <= 0:
             col3_dict[r] = []
             continue
         new_entries = []
+        
         for d, i, j in prev2:
             key = (d + 1, i, j)
             if j > i and key not in used_keys:
@@ -122,6 +133,7 @@ def generate_col3_columns(k, col2_dict):
                 new_entries.append([*key])
             if len(new_entries) == target:
                 break
+        
         if len(new_entries) < target:
             for d, i, j in prev3:
                 key = (d + 1, i, j)
@@ -130,6 +142,7 @@ def generate_col3_columns(k, col2_dict):
                     new_entries.append([*key])
                 if len(new_entries) == target:
                     break
+        
         col3_dict[r] = new_entries
     return col3_dict
 
@@ -341,3 +354,4 @@ def label_to_key(label):
     d = int(head[1:])
     return (d, int(si), int(sj))
 
+c6 = generate_col2_columns(6)
