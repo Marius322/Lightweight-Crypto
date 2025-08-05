@@ -169,8 +169,7 @@ def generate_all_columns(k):
 # Operator Generators
 
 def generate_aij_dict(k):
-    '''
-    
+    '''  
 
     Inputs
     ----------
@@ -208,6 +207,7 @@ def generate_top_head_dict(k):
     def full_col(r):
         return col1.get(r,[])+col2.get(r,[])+col3.get(r,[])
     top_head = {}
+   
     # Case 1
     for r in range(4, k+1):
         i,j = k-r+1, k
@@ -217,6 +217,7 @@ def generate_top_head_dict(k):
         head_key = (1, head[1], head[2])
         tail_keys = [(d,i2,j2) for d,i2,j2 in tail]
         top_head[(2,i,j)] = ( head_key, tail_keys )
+    
     # Case 2
     for r in range(k+1, 2*k-2):
         i,j = 1, 2*k-r
@@ -323,6 +324,8 @@ def generate_parsed_maps(k):
     aij = generate_aij_dict(k)
     top_head = generate_top_head_dict(k)
     rec = generate_recursive_column_formulas(k)
+    
+    
     return (
       all_cols,            
       aij,               
@@ -354,4 +357,3 @@ def label_to_key(label):
     d = int(head[1:])
     return (d, int(si), int(sj))
 
-c6 = generate_col2_columns(6)
