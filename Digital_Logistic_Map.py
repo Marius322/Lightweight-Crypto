@@ -92,7 +92,3 @@ def digital_logistic_map(x: float, n: int, k: int):
     
     return xN
 
-x = 0.314
-n = 10
-k = 32
-#print(digital_logistic_map(x, n, k))
