@@ -9,26 +9,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 import Functions as f
 from Digital_Logistic_Map import digital_logistic_map
+from Numba_Logistic_Map import digital_logistic_map_numba
 
 # Graphing Xn vs Xn+1 for all Logistic Map 
 
-x = 0.2 # Starting Condition
-n = 100 # Number of Iterations
-k = 12 # Number of digits
+x = 0.7 # Starting Condition
+n = 750 # Number of Iterations
+k = 64 # Number of digits
 
 x_vals = f.Logistic_map(x, n)  # one long trajectory
-x_vals_digital = digital_logistic_map(x, n, k)
+#x_vals_digital = digital_logistic_map(x, n, k)
+x_vals_digital_numba = digital_logistic_map_numba(x, n, k)
 
 # Plotting Graph    
 
 x_n = x_vals[:-1] # all but last
-x_n_digital = x_vals_digital[:-1] # all but last
+#x_n_digital = x_vals_digital[:-1] # all but last
+x_n_digital_numba = x_vals_digital_numba[:-1] # all but last
 
 x_np1 = x_vals[1:] # all but first
-x_np1_digital = x_vals_digital[1:] # all but first
+#x_np1_digital = x_vals_digital[1:] # all but first
+x_np1_digital_numba = x_vals_digital_numba[1:] # all but first
 
 plt.plot(x_n, x_np1, 'ro', label = 'logistic map')
-plt.plot(x_n_digital, x_np1_digital, 'bo', label = 'digital logistic map')
+#plt.plot(x_n_digital, x_np1_digital, 'bo', label = 'digital logistic map')
+plt.plot(x_n_digital_numba, x_np1_digital_numba, 'go', label = 'numba logistic map')
 plt.legend()
 plt.grid()
 plt.xlabel('Xn')
@@ -43,7 +48,10 @@ def one_step_map(x):
 def one_step_map_for_digital(x):
     return digital_logistic_map(x, 1, k)[-1]  # take the 2nd value: f(x)
 
-def cobweb_plot(f, x0, n=60):
+def one_step_map_for_digital_numba(x):
+    return digital_logistic_map_numba(x, 1, k)[-1]  # take the 2nd value: f(x)
+
+def cobweb_plot(f, x0, n):
     '''
     f : map function that returns f(x)
     x0 : initial condition
@@ -69,7 +77,7 @@ def cobweb_plot(f, x0, n=60):
 
     plt.plot(x_vals, y_vals, color='red', lw=1, label='Cobweb Path')
 
-    plt.title(f"Cobweb Plot of {f}")
+    plt.title(f"Cobweb Plot of {f} for n = {n} and x0 = {x0}")
     plt.xlabel('$x_n$')
     plt.ylabel('$x_{n+1}$')
     plt.legend()
@@ -77,9 +85,8 @@ def cobweb_plot(f, x0, n=60):
     #plt.savefig(f"Cobweb Plot of {f}.png") 
     plt.show()
 
-
 # Usage
 
-cobweb_plot(one_step_map, x0=x, n=n)
-cobweb_plot(one_step_map_for_digital, x0=x, n=n)
-
+cobweb_plot(one_step_map, x0=x, n = 100)
+#cobweb_plot(one_step_map_for_digital, x0=x, n=60)
+cobweb_plot(one_step_map_for_digital_numba, x0=x, n= 100)
