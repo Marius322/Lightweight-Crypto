@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Generator that holds Numba formulas, used to further optimise digital map
+Generator that creates formulas via Numpy arrays and lists, suitable for Numba
 
 @author: 22391643
 """
 
 import numpy as np
 import itertools
+from functools import lru_cache
 
 # Helper Functions
 
@@ -105,21 +106,24 @@ def build_op_keys(unique_ops):
     
     return op_keys
 
-def build_flattened_formulas(aij, Nnij, op_to_idx):
+def build_flattened_formulas(aij, Nnij, Nnij_ops, op_to_idx):
     '''
 
     Input
     ----------
     aij : Numpy array containing all aij ops
     
-    Nnij : Numpy array containing all Nn_i_j ops
+    Nnij : Numpy array containing the formula for all Nn_i_j ops
+    
+    Nnij_ops : Numpy array containing all Nn_i_j ops
     
     op_to_idx : List containing index for all ops
 
     Returns
     -------
     entry_op : Numpy array containing a reference for all ops - removes tuples
-               from main loop in Logistic Map
+               from main loop in Logistic Map - same  function as op_keys but 
+               keep for flexibilty
         
     head_idx : Numpy array containing the head for all ops
         
@@ -136,16 +140,17 @@ def build_flattened_formulas(aij, Nnij, op_to_idx):
     
     entries = []
     
-    # chunk 0 all have head = itself, tails = []
+    # All A_i_j formulas
     for row in aij:
         op = (int(row[0]),int(row[1]),int(row[2]))
         entries.append((op, op, []))
 
     # All the Nn formulas - Problem is here
     C = len(Nnij)
-    for r in range(C):
-        for head, tails in Nnij[r]:
-            entries.append((op, head, tails)) # define op to be (d + 1, i, j), where (d, i, j) = head.
+    for cl in range(C):
+        for Nnij_ops_keys, (head, tails) in zip( Nnij_ops[cl], Nnij[cl] ):
+            entries.append((Nnij_ops_keys, head, tails))
+
 
     # Convert heads/tails into indices
     E = len(entries) # Total number of Formulas
@@ -167,7 +172,54 @@ def build_flattened_formulas(aij, Nnij, op_to_idx):
     
     return entry_op, head_idx, tail_strt, tail_len, tail_idxs
 
-def build_inv_powers(k): # PLace inside Digital Map
+def build_flatten_columns(all_chunks, op_to_idx):
+    '''
+
+    Inputs
+    ----------
+    all_chunks : Numpy array containing all [n, i, j] tuples i each column
+        
+    op_to_idx : List containing index for all ops
+
+    Returns
+    -------
+    col_strt : Numpy array containing the ops that start each column
+        
+    col_len : Numpy array containing the length of each column
+        
+    col_idxs : Numpy array containing a flattened list of all ops_idx ordered 
+               by which col they appear in
+
+    '''
+    
+    C = len(all_chunks)
+    col_strt = np.empty(C, dtype=np.int32)
+    col_len = np.empty(C, dtype=np.int32)
+    ops_flat = []
+
+    for r in range(C):
+        col_strt[r] = len(ops_flat)
+        col_len[r] = len(all_chunks[r])
+        for (d,i,j) in all_chunks[r]:
+            ops_flat.append(op_to_idx[(d,i,j)])
+
+    col_idxs = np.array(ops_flat, dtype=np.int32)
+    
+    return col_strt, col_len, col_idxs
+
+def build_inv_powers(k): 
+    '''
+
+    Input
+    ----------
+    k : Number of digits in binary number
+
+    Returns
+    -------
+    inv_powers : Numpy array used in digital map to convert from binary to 
+                 float
+
+    '''
     
     C = 2*k - 2
     inv_powers =  2.0 ** ( - np.arange(1, C+1, dtype=np.float64) )
@@ -460,16 +512,19 @@ def generate_Nnij(all_chunks, top_head_array, rec_array, k):
     Returns
     -------
     Nnij : Numpy array containing the formulas for all Nn_i_j ops
+    
+    Nnij_ops : Numpy array containing all Nn_i_j ops
 
     '''
     
     C = 2*k - 2
     Nnij_array = [None] * C
+    Nnij_ops_array = [None] * C
 
     # walk column by column
-    for r in range(C):
+    for cl in range(C):
         # get the “top” formula if present
-        th = top_head_array[r]
+        th = top_head_array[cl]
         if isinstance(th, (list, tuple)):
             # wrap into a single‐element list if it's not already one
             if len(th) == 2 and not isinstance(th[0], list):
@@ -480,24 +535,43 @@ def generate_Nnij(all_chunks, top_head_array, rec_array, k):
             top_list = []
             
         # get the recursive formulas
-        recs = rec_array[r] if rec_array[r] is not None else []
+        recs = rec_array[cl] if rec_array[cl] is not None else []
 
         # concatenate
-        Nnij_array[r] = top_list + recs
+        Nnij_array[cl] = top_list + recs
+        
+        # Get operator key for Nn_i_j only
+        Nnij_ops_array[cl] = [ key for key in all_chunks[cl] if key[0] != 1 ]
 
     # now turn into a single numpy array of objects
     Nnij = np.array(Nnij_array, dtype=object)
+    Nnij_ops = np.array(Nnij_ops_array, dtype = object)
     
-    return Nnij
+    return Nnij, Nnij_ops
 
 # Map Generator
 
-k = 4
-all_chunks = generate_all_chunks(k)
-top_head_array = generate_top_head_array(k)
-rec_array = generate_rec_array(k)
-aij = generate_aij(k)
-Nnij = generate_Nnij(all_chunks, top_head_array, rec_array, k)
-op_list,op_to_idx = build_op_list(aij, Nnij, k)
-op_keys = build_op_keys(op_list)
-entry_op, head_idx, tail_strt, tail_len, tail_idxs = build_flattened_formulas(aij, Nnij, op_to_idx)
+@lru_cache(maxsize = 1)
+def generate_listed_map(k):
+    
+    all_chunks = generate_all_chunks(k)
+    top_head_array = generate_top_head_array(k)
+    rec_array = generate_rec_array(k)
+    aij = generate_aij(k)
+    Nnij, Nnij_ops = generate_Nnij(all_chunks, top_head_array, rec_array, k)
+    op_list,op_to_idx = build_op_list(aij, Nnij, k)
+    op_keys = build_op_keys(op_list)
+    (entry_op, head_idx, 
+     tail_strt, tail_len, 
+     tail_idxs) = build_flattened_formulas(aij, Nnij, Nnij_ops, op_to_idx)
+    col_strt, col_len, col_idxs = build_flatten_columns(all_chunks, op_to_idx)
+    inv_powers = build_inv_powers(k)
+    
+    return (op_keys,
+            entry_op,
+            head_idx,
+            tail_strt, tail_len, tail_idxs,
+            col_strt, col_len, col_idxs,
+            inv_powers)
+ 
+         
