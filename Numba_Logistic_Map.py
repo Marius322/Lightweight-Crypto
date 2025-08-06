@@ -9,8 +9,6 @@ import Numba_Map_Generator as NMG
 import numpy as np
 from numba import njit
 
-# Function
-
 @njit
 def unwrapped_digital_logistic_map(x, n, k, 
                                    op_keys,
@@ -19,6 +17,22 @@ def unwrapped_digital_logistic_map(x, n, k,
                                    tail_strt, tail_len, tail_idxs,
                                    col_strt, col_len, col_idxs,
                                    inv_powers, C, M):
+    '''
+
+    Parameters
+    ----------
+    x : starting number 
+    
+    n : number of iterations
+    
+    k : number of digits in the binary representation of x
+    -------
+
+    Returns
+    -------
+    xN : sequence of numbers determined by the digitised version of the 
+         logistic map
+    '''
     
     # Catching Errors
     if x <= 0 or x >= 1:
@@ -109,19 +123,36 @@ def unwrapped_digital_logistic_map(x, n, k,
                 
     return xN
 
-# Testing
+def digital_logistic_map_numba(x: float, n: int, k: int):
+    """
+    Wrapper function that calls the actual digital logistic map with only x, n
+    and k as inputs
+    """
+    
+    # pull in for this k
+    (op_keys,
+     entry_op,
+     head_idx,
+     tail_strt, tail_len, tail_idxs,
+     col_strt, col_len, col_idxs,
+     inv_powers,
+     C, M) = NMG.generate_listed_map(k)
+
+    # call the fast nopython‐mode routine
+    
+    return unwrapped_digital_logistic_map(
+        x, n, k,
+        op_keys,
+        entry_op,
+        head_idx,
+        tail_strt, tail_len, tail_idxs,
+        col_strt, col_len, col_idxs,
+        inv_powers,
+        C, M
+    )
 
 x = 0.314
-n = 1000
+n = 100
 k = 64
-       
-(op_keys,
- entry_op,
- head_idx,
- tail_strt, tail_len, tail_idxs,
- col_strt, col_len, col_idxs,
- inv_powers, C, M) = NMG.generate_listed_map(k)
-        
-xN = unwrapped_digital_logistic_map(x, n, k, op_keys, entry_op, head_idx, tail_strt, tail_len, tail_idxs, col_strt, col_len, col_idxs, inv_powers, C, M)   
 
-
+xN = digital_logistic_map_numba(x, n, k)
