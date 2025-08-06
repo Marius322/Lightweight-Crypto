@@ -49,7 +49,7 @@ def build_op_list(aij, Nnij, k):
 
     Returns
     -------
-    unique_ops : List containing all ops 
+    op_list : List containing all ops 
         
     op_to_idx : List containing index for each op in unique_ops
     '''
@@ -72,23 +72,23 @@ def build_op_list(aij, Nnij, k):
             ops.append((d+1, i, j)) 
 
     # Deduplicate & freeze an order
-    unique_ops = []
+    ops_list = []
     seen = set()
     for op in ops:
         if op not in seen:
             seen.add(op)
-            unique_ops.append(op)
+            ops_list.append(op)
 
-    op_to_idx = {op: idx for idx, op in enumerate(unique_ops)}
+    op_to_idx = {op: idx for idx, op in enumerate(ops_list)}
     
-    return unique_ops, op_to_idx
+    return ops_list, op_to_idx
 
-def build_op_keys(unique_ops):
+def build_op_keys(ops_list):
     '''    
 
     Input
     ----------
-    unique_ops : List containing all ops
+    ops_list : List containing all ops
     
     Returns
     -------
@@ -96,10 +96,10 @@ def build_op_keys(unique_ops):
 
     '''
     
-    M = len(unique_ops)
-    op_keys = np.empty((M,3), dtype=np.int32)
+    M = len(ops_list)
+    op_keys = np.empty((M,3), dtype=np.int16)
     
-    for idx, (d,i,j) in enumerate(unique_ops):
+    for idx, (d,i,j) in enumerate(ops_list):
         op_keys[idx,0] = d
         op_keys[idx,1] = i
         op_keys[idx,2] = j
@@ -415,8 +415,7 @@ def generate_aij(k):
         for (d, i, j) in col:
             aij.append((d, i, j))
             
-    # convert to a (N,3) array of int32
-    aij = np.array(aij, dtype=np.int32)
+    aij = np.array(aij, dtype=np.uint8)
     # ensure shape is (N,3)
     aij = aij.reshape(-1, 3)
     
@@ -559,19 +558,21 @@ def generate_listed_map(k):
     rec_array = generate_rec_array(k)
     aij = generate_aij(k)
     Nnij, Nnij_ops = generate_Nnij(all_chunks, top_head_array, rec_array, k)
-    op_list,op_to_idx = build_op_list(aij, Nnij, k)
-    op_keys = build_op_keys(op_list)
+    ops_list,op_to_idx = build_op_list(aij, Nnij, k)
+    op_keys = build_op_keys(ops_list)
     (entry_op, head_idx, 
      tail_strt, tail_len, 
      tail_idxs) = build_flattened_formulas(aij, Nnij, Nnij_ops, op_to_idx)
     col_strt, col_len, col_idxs = build_flatten_columns(all_chunks, op_to_idx)
     inv_powers = build_inv_powers(k)
+    C = 2*k - 2
+    M = len(ops_list)
     
     return (op_keys,
             entry_op,
             head_idx,
             tail_strt, tail_len, tail_idxs,
             col_strt, col_len, col_idxs,
-            inv_powers)
+            inv_powers, C, M)
  
-         
+        
