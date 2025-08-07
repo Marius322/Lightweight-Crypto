@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug  7 09:30:59 2025
+Runs ENT test for given file
 
 @author: 22391643
 """
