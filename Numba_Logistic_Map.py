@@ -10,7 +10,7 @@ import numpy as np
 from numba import njit
 
 @njit
-def unwrapped_digital_logistic_map(x, n, k, 
+def unwrapped_digital_logistic_map_numba(x, n, k, 
                                    op_keys,
                                    entry_op,
                                    head_idx,
@@ -18,7 +18,8 @@ def unwrapped_digital_logistic_map(x, n, k,
                                    col_strt, col_len, col_idxs,
                                    inv_powers, C, M):
     '''
-
+    Digitised version of logistic map that is numba friendly
+    
     Parameters
     ----------
     x : starting number 
@@ -34,14 +35,6 @@ def unwrapped_digital_logistic_map(x, n, k,
          logistic map
     '''
     
-    # Catching Errors
-    if x <= 0 or x >= 1:
-        raise ValueError('x must lie between 0 and 1')
-    if k <= 0:
-        raise ValueError('k must be greater than 0')
-    if n <= 0:
-        raise ValueError('n must be greater than 1')
-     
     # Initialising arrays
     xN = np.zeros(n+1, dtype = np.longdouble)
     xN[0] = x
@@ -105,8 +98,8 @@ def unwrapped_digital_logistic_map(x, n, k,
                     xor ^= bit_cache[tail_idxs[te]]
                 
                 # Head AND Tail
-                bit_cache[op_id] = bit_cache[h] & xor
-                
+                bit_cache[op_id] = bit_cache[h] & xor            
+            
             # XOR bit_cache[op_id] along along each column to create XCol
             XCol_entry = np.uint8(0)
                 
@@ -128,7 +121,18 @@ def digital_logistic_map_numba(x: float, n: int, k: int):
     Wrapper function that calls the actual digital logistic map with only x, n
     and k as inputs
     """
-    
+   
+    # Catching Errors
+    if x <= 0 or x >= 1:
+        raise ValueError('x must lie between 0 and 1')
+        return
+    if k <= 0:
+        raise ValueError('k must be greater than 0')
+        return
+    if n <= 0:
+        raise ValueError('n must be greater than 1')
+        return
+        
     # pull in for this k
     (op_keys,
      entry_op,
@@ -137,10 +141,8 @@ def digital_logistic_map_numba(x: float, n: int, k: int):
      col_strt, col_len, col_idxs,
      inv_powers,
      C, M) = NMG.generate_listed_map(k)
-
-    # call the fast nopython‐mode routine
     
-    return unwrapped_digital_logistic_map(
+    return unwrapped_digital_logistic_map_numba(
         x, n, k,
         op_keys,
         entry_op,
@@ -151,8 +153,5 @@ def digital_logistic_map_numba(x: float, n: int, k: int):
         C, M
     )
 
-x = 0.314
-n = 100
-k = 64
 
-xN = digital_logistic_map_numba(x, n, k)
+
