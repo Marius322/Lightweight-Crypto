@@ -445,3 +445,4 @@ def digital_logistic_map_bits(init_bits: str, n: int) -> str:
 
     # return all k‑bit states concatenated
     return "".join(bit_strings)
+
