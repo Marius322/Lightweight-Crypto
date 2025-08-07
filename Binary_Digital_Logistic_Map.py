@@ -42,7 +42,7 @@ def float_to_binary_frac(x: float, k: int):
         if x == 0:
             break
         
-    strng = ''.join_bits
+    strng = ''.join(bits)
     
     return strng
 
@@ -88,7 +88,7 @@ def array_to_binary_string(array: np.ndarray, k: int, filename: str):
     
     return result, total_bits
 
-x = 0.786
+x = 0.314
 n = 10000
 k = 64
 
