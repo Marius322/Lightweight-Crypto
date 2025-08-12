@@ -97,7 +97,7 @@ def build_op_keys(ops_list):
     '''
     
     M = len(ops_list)
-    op_keys = np.empty((M,3), dtype=np.int16)
+    op_keys = np.empty((M,3), dtype=np.int32)
     
     for idx, (d,i,j) in enumerate(ops_list):
         op_keys[idx,0] = d
@@ -222,7 +222,7 @@ def build_inv_powers(k):
     '''
     
     C = 2*k - 2
-    inv_powers =  2.0 ** ( - np.arange(1, C+1, dtype=np.float64) )
+    inv_powers =  2.0 ** ( - np.arange(1, C+1, dtype=np.longdouble) )
     
     return inv_powers
 
@@ -265,7 +265,6 @@ def generate_chunk1_arrays(k):
                 break
             else:
                 col.append((1, i, j))
-                n += 1 
         
         # Creating full array
         chunk1_array[cl] = col if col else []
@@ -308,7 +307,6 @@ def generate_chunk2_arrays(k):
                 break
             else:
                 col.append((2, i, j))
-                n += 1 
                 
         # Creating full array
         chunk2_array[cl] = col if col else []
@@ -415,7 +413,7 @@ def generate_aij(k):
         for (d, i, j) in col:
             aij.append((d, i, j))
             
-    aij = np.array(aij, dtype=np.uint8)
+    aij = np.array(aij, dtype=np.uint32)
     # ensure shape is (N,3)
     aij = aij.reshape(-1, 3)
     
