@@ -38,12 +38,13 @@ def unwrapped_digital_logistic_map_numba(x, n, k,
     # Initialising arrays
     xN = np.zeros(n+1, dtype = np.longdouble)
     xN[0] = x
+    s = np.longdouble(0)
     
     # Iterate n steps 
     for it in range(n):
         
         # If we've fallen out of (0,1), stop early
-        if x == 0 or x == 1:
+        if x <= 0 or x >= 1:
             print(f"ERROR - {xN[it-1]} went outside accepted range after {it} iterations")
             return xN[:it]
         
@@ -62,7 +63,7 @@ def unwrapped_digital_logistic_map_numba(x, n, k,
                 a[i] = 0
         
         # Initialise final values for all ops
-        bit_cache = np.empty(M, dtype = np.uint32)
+        bit_cache = np.empty(M, dtype = np.uint8)
         bit_cache.fill(0)
         
         # Compute A_i_j ops
@@ -102,7 +103,7 @@ def unwrapped_digital_logistic_map_numba(x, n, k,
             
             # XOR bit_cache[op_id] along along each column to create XCol
             XCol_entry = np.uint8(0)
-                
+            
             for idx in range(start, start + length):
                 XCol_entry ^= bit_cache[col_idxs[idx]]
             XCol[C - 1 -cl] = XCol_entry  
