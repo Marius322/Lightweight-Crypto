@@ -11,11 +11,29 @@ import Functions as f
 from Digital_Logistic_Map import digital_logistic_map
 from Numba_Logistic_Map import digital_logistic_map_numba
 
-# Graphing Xn vs Xn+1 for all Logistic Map 
-
-x = 0.7 # Starting Condition
-n = 750 # Number of Iterations
+x = 0.945 # Starting Condition
+n = 100 # Number of Iterations
 k = 64 # Number of digits
+
+# Graphing Accuracy for numba only
+Accuracy = np.arange(0, n+1, dtype = float)
+Range = np.arange(0, n+1)
+Numba_vals = digital_logistic_map_numba(x, n, k)
+Logistic_vals = f.Logistic_map(x, n)
+
+for t in range(len(Accuracy)):
+    Accuracy[t] = Numba_vals[t] - Logistic_vals[t]
+    
+# Plotting Graph
+plt.plot(Range, Accuracy, 'ro', label = 'Accuracy')
+plt.legend()
+plt.grid()
+plt.xlabel('Range')
+plt.ylabel('Accuracy')
+plt.title('Accuracy')
+plt.show()   
+
+# Graphing Xn vs Xn+1 for all Logistic Map 
 
 x_vals = f.Logistic_map(x, n)  # one long trajectory
 #x_vals_digital = digital_logistic_map(x, n, k)
