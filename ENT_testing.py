@@ -144,7 +144,7 @@ def analyse_seed_file(filename: str):
     print(f"Analysis of '{filename}':\n" + "-"*40)
     print(f"Total bytes analyzed       : {len(data)}")
     print(f"Shannon entropy            : {entropy:.6f} bits/byte (max 8.0)")
-    print(f"Chi-square statistic       : {chi_sq:.3f} (ideal chi_sq ≈ 255)")
+    print(f"Chi-square statistic       : {chi_sq:.3f}")
     print(f"Arithmetic mean            : {mean_val:.3f} (ideal ~ 127.5)")
     print(f"Monte Carlo π approximation: {pi_est:.6f} (ideal π ≈ 3.141593)")
     print(f"Serial correlation coeff.  : {ser_corr:.6f} (ideal ~ 0)")
@@ -152,4 +152,5 @@ def analyse_seed_file(filename: str):
     
     return
 
-analyse_seed_file('0.786.seed')
+analyse_seed_file('0.111.seed')
+
