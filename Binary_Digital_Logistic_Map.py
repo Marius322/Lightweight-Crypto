@@ -7,7 +7,7 @@ and saves them into a file for ENT/NIST testing
 """
 
 import numpy as np
-from Functions import Logistic_map
+from Functions import transform_logistic_map
 from Numba_Logistic_Map import digital_logistic_map_numba
 
 def float_to_binary_frac(x: float, k: int):
@@ -87,10 +87,10 @@ def array_to_binary_string(array: np.ndarray, k: int, filename: str):
     
     return result, total_bits
 
-x = 0.111
-n = 1000
-k = 64
+x = 0.86
+n = 1000 # 100,000 for k = 32, 70,000 for k = 48, 50,000 for k = 64
+k = 48
 
-Log = Logistic_map(x, n)
 xN = digital_logistic_map_numba(x, n, k)
-_, total_bits = array_to_binary_string(xN, k, f"{x}")
+yN = transform_logistic_map(xN, T = 101, d = 3)
+_, total_bits = array_to_binary_string(yN, k, f"{x}")
