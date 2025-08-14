@@ -61,7 +61,9 @@ def chi_square_stat(data: bytes):
     
     # Calculation 
     expected = N / 256
-    return sum((counts[i] - expected)**2 / expected for i in range(256))
+    result = sum((counts[i] - expected)**2 / expected for i in range(256))
+    
+    return result
 
 def arithmetic_mean(data: bytes):
     """
@@ -152,5 +154,5 @@ def analyse_seed_file(filename: str):
     
     return
 
-analyse_seed_file('0.324.seed')
+analyse_seed_file('Test0.001.seed')
 
