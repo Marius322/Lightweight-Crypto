@@ -7,6 +7,7 @@ Digital Logistic Map that uses numpy arrays and works with numba
 
 import Numba_Map_Generator as NMG
 import numpy as np
+import math
 from numba import njit
 
 @njit
@@ -16,7 +17,7 @@ def unwrapped_digital_logistic_map_numba(x, n, k,
                                    head_idx,
                                    tail_strt, tail_len, tail_idxs,
                                    col_strt, col_len, col_idxs,
-                                   inv_powers, C, M):
+                                   C, M, a0):
     '''
     Digitised version of logistic map that is numba friendly
     
@@ -31,46 +32,33 @@ def unwrapped_digital_logistic_map_numba(x, n, k,
 
     Returns
     -------
-    xN : sequence of numbers determined by the digitised version of the 
+    xN : sequence of float numbers determined by the digitised version of the 
          logistic map
+         
+    A : sequence of bits determined by the digitised version of the logistic  
+        map
     '''
     
     # Initialising arrays
-    xN = np.zeros(n+1, dtype = np.longdouble)
+    xN = np.zeros(n+1, dtype = np.float64)
     xN[0] = x
-    s = np.longdouble(0)
+    
+    a = a0
+    depths = op_keys[:, 0]
+    i_idx  = op_keys[:, 1] - 1
+    j_idx  = op_keys[:, 2] - 1
+    
+    bit_cache = np.empty(M, dtype = np.uint8)
+    XCol = np.empty(C, dtype = np.uint8)
     
     # Iterate n steps 
     for it in range(n):
         
-        # If we've fallen out of (0,1), stop early
-        if x <= 0 or x >= 1:
-            print(f"ERROR - {xN[it-1]} went outside accepted range after {it} iterations")
-            return xN[:it]
-        
-        # Re-initialise XCol at beginning of each iteration
-        XCol = np.zeros(C, dtype = np.uint8)
-        
-        # Convert current x to its k-bit fractional binary a[0..k-1]
-        a = np.zeros(k, np.uint8)
-        z = x
-        for i in range(k):
-            z *= 2
-            if z >= 1:
-                a[i] = 1
-                z -= 1
-            else:
-                a[i] = 0
-        
-        # Initialise final values for all ops
-        bit_cache = np.empty(M, dtype = np.uint8)
+        # Initialise final values for all ops and XCol
         bit_cache.fill(0)
+        XCol.fill(0)
         
-        # Compute A_i_j ops
-        depths = op_keys[:, 0]
-        i_idx  = op_keys[:, 1] - 1
-        j_idx  = op_keys[:, 2] - 1
-        
+        # Compute A_i_j ops        
         bits = a[i_idx] ^ a[j_idx]
         bit_cache[:] = bits * (depths == 1)
         
@@ -107,13 +95,22 @@ def unwrapped_digital_logistic_map_numba(x, n, k,
             for idx in range(start, start + length):
                 XCol_entry ^= bit_cache[col_idxs[idx]]
             XCol[C - 1 -cl] = XCol_entry  
-            
+        
         # Convert back to real
-        s = 0.0
-        for j in range(C):
-            s += XCol[j] * inv_powers[j]
-        x = s
-        xN[it + 1] = x            
+        x = np.float64(0.0)
+        for j in range(C - 1, -1, -1): 
+            # Horner Method
+            x = 0.5 * (x + np.float64(XCol[j]))
+        
+        xN[it + 1] = x 
+        
+        # Set a to be XCol for next iteration
+        a[:] = XCol[:k]
+        
+        # If we've fallen out of (0,1), stop early
+        if x <= 0 or x >= 1:
+            print(f"ERROR - {xN[it-1]} went outside accepted range after {it} iterations")
+            return xN[:it]
                 
     return xN
 
@@ -133,6 +130,14 @@ def digital_logistic_map_numba(x: float, n: int, k: int):
     if n <= 0:
         raise ValueError('n must be greater than 1')
         return
+    
+    # Convert input x to its k-bit fractional binary a[0..k-1]
+    a0 = np.zeros(k, dtype = np.uint8)
+    acc = int(math.floor(math.ldexp(float(x), k)))  # acc = ⌊x·2^k⌋
+    
+    for j in range(k):
+        # Most-significant fractional bit first
+        a0[j] = (acc >> (k - 1 - j)) & 1
         
     # pull in for this k
     (op_keys,
@@ -140,19 +145,22 @@ def digital_logistic_map_numba(x: float, n: int, k: int):
      head_idx,
      tail_strt, tail_len, tail_idxs,
      col_strt, col_len, col_idxs,
-     inv_powers,
      C, M) = NMG.generate_listed_map(k)
     
-    return unwrapped_digital_logistic_map_numba(
+    xN = unwrapped_digital_logistic_map_numba(
         x, n, k,
         op_keys,
         entry_op,
         head_idx,
         tail_strt, tail_len, tail_idxs,
         col_strt, col_len, col_idxs,
-        inv_powers,
-        C, M
+        C, M, a0
     )
+    
+    return xN
 
+x = 0.314
+n = 19
+k = 64
 
-
+xN = digital_logistic_map_numba(x, n, k)
