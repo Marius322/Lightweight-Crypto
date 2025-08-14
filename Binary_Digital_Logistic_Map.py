@@ -9,39 +9,37 @@ and saves them into a file for ENT/NIST testing
 import numpy as np
 from Functions import transform_logistic_map
 from Numba_Logistic_Map import digital_logistic_map_numba
+import math
 
 def float_to_binary_frac(x: float, k: int):
     '''
     Helper function that converts a float number to binary, where the binary 
-    number is at most k digits long
+    number is k digits long
 
     Parameters
     ----------
     x : Float number being converted to binary
     
-    k : Maximum number of digits in binary representation of x
+    k : Number of digits in binary representation of x
 
     Returns
     -------
-    strng : Binary representation of x with maximimum length k in string format
+    strng : Binary representation of x with length k in string format
 
     '''
     
     # Error catching
     if not (0 < x < 1):
         raise ValueError(f"x must be >0 and <1, got {x}")
+        
+    # Nudge exact 1.0 down to avoid acc == 2^k
+    if x == 1.0:
+        x = math.nextafter(1.0, 0.0)
     
     #Creating binary string
-    bits = []
-    for _ in range(k):
-        x *= 2
-        if x >= 1.0:
-            bits.append('1')
-            x -= 1.0
-        else:
-            bits.append('0')
-        
-    strng = ''.join(bits)
+    acc = int(math.floor(math.ldexp(float(x), k)))  # acc = ⌊x·2^k⌋
+    
+    strng = format(acc, f"0{k}b")
     
     return strng
 
@@ -66,12 +64,22 @@ def array_to_binary_string(array: np.ndarray, k: int, filename: str):
 
     '''
     
+    # Defining array
+    arr = np.asarray(array, dtype=np.float64)
+    
     # Error catching
-    if not np.all((array > 0) & (array < 1)):
+    if not np.all((arr > 0) & (arr < 1)):
         raise ValueError("All elements must be strictly >0 and <1.")
+        
+    # Clamp into [0,1], then nudge any exact 1.0 down by one ULP
+    arr = np.clip(arr, 0.0, 1.0)
+    if np.any(arr == 1.0):
+        arr = arr.copy()
+        arr[arr == 1.0] = np.nextafter(1.0, 0.0)
     
     # Convert float numbers to binary and stitch strings together
-    chunks = [float_to_binary_frac(x, k) for x in array]
+    accs = np.floor(np.ldexp(arr, k)).astype(np.uint64)
+    chunks = [format(int(a), f"0{k}b") for a in accs]
     result = ''.join(chunks)
     
     # Ensure filename ends with .seed
@@ -87,10 +95,20 @@ def array_to_binary_string(array: np.ndarray, k: int, filename: str):
     
     return result, total_bits
 
-x = 0.86
-n = 1000 # 100,000 for k = 32, 70,000 for k = 48, 50,000 for k = 64
-k = 48
 
+n = 82_000 # 105,000 for d = 5, k = 48; 82,000 for d = 5, k = 64
+k = 64
+#X = np.linspace(0.001, 0.999, 20)
+
+'''
+for i in range(len(X)):
+    
+   xN = digital_logistic_map_numba(X[i], n, k)
+   yN = transform_logistic_map(xN, T = 101, d = 5)
+   _, total_bits = array_to_binary_string(yN, k, f"{X[i]}")
+'''
+
+x = 0.001
 xN = digital_logistic_map_numba(x, n, k)
-yN = transform_logistic_map(xN, T = 101, d = 3)
-_, total_bits = array_to_binary_string(yN, k, f"{x}")
+yN = transform_logistic_map(xN, T = 101, d = 5)
+_, total_bits = array_to_binary_string(yN, k, f"Test{x}")
