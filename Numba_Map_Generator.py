@@ -207,25 +207,6 @@ def build_flatten_columns(all_chunks, op_to_idx):
     
     return col_strt, col_len, col_idxs
 
-def build_inv_powers(k): 
-    '''
-
-    Input
-    ----------
-    k : Number of digits in binary number
-
-    Returns
-    -------
-    inv_powers : Numpy array used in digital map to convert from binary to 
-                 float
-
-    '''
-    
-    C = 2*k - 2
-    inv_powers =  2.0 ** ( - np.arange(1, C+1, dtype=np.longdouble) )
-    
-    return inv_powers
-
 # Column generators
 
 def generate_chunk1_arrays(k):
@@ -562,7 +543,6 @@ def generate_listed_map(k):
      tail_strt, tail_len, 
      tail_idxs) = build_flattened_formulas(aij, Nnij, Nnij_ops, op_to_idx)
     col_strt, col_len, col_idxs = build_flatten_columns(all_chunks, op_to_idx)
-    inv_powers = build_inv_powers(k)
     C = 2*k - 2
     M = len(ops_list)
     
@@ -571,6 +551,6 @@ def generate_listed_map(k):
             head_idx,
             tail_strt, tail_len, tail_idxs,
             col_strt, col_len, col_idxs,
-            inv_powers, C, M)
+            C, M)
  
-        
+ 
