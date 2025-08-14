@@ -5,6 +5,7 @@ Gives Logistic Map
 @author: 22391643
 """
 import numpy as np
+from numba import njit, prange
 
 def Logistic_map(x, n):
     
@@ -20,6 +21,7 @@ def Logistic_map(x, n):
              
         return X
 
+@njit(parallel = True)
 def transform_logistic_map(xN, T, d):
     
     def inverse_transform(x):
@@ -28,14 +30,21 @@ def transform_logistic_map(xN, T, d):
         return y
     
     xN = xN[int(T):]
-    yN = np.zeros(len(xN), dtype = np.longdouble)
-    for i in range (len(xN)):
-        yN[i] = inverse_transform(xN[i]) + 1/2
+    yN = np.zeros(len(xN), dtype = np.float64)
+    
+    for i in prange (len(xN)):
+        
+        #Catching rounding errors
+        t = np.float64(2.0)*xN[i] - np.float64(1.0)
+        if t > 1.0: t = 1.0
+        if t < -1.0: t = -1.0
+        
+        yN[i] = inverse_transform(xN[i]) + np.float64(0.5)
         
     yN = yN[::d]
     
     return yN
-        
- 
+
+
 
 
