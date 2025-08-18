@@ -529,7 +529,7 @@ def generate_Nnij(all_chunks, top_head_array, rec_array, k):
 
 # Map Generator
 
-@lru_cache(maxsize = 1)
+@lru_cache(maxsize = 2)
 def generate_listed_map(k):
     
     all_chunks = generate_all_chunks(k)
@@ -552,5 +552,6 @@ def generate_listed_map(k):
             tail_strt, tail_len, tail_idxs,
             col_strt, col_len, col_idxs,
             C, M)
- 
+
+
  
