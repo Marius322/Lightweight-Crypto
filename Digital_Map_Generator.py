@@ -2,358 +2,556 @@
 """
 Creates the formulas used for digital map
 Automatically includes the left-shift-by-two (drops two columns on left)
-Gives 2k-2 length output
+Gives 2k-3 length output
 
 @author: 22391643
 """
 
-from concurrent.futures import ThreadPoolExecutor
-import math
+import numpy as np
+import itertools
 from functools import lru_cache
 
-# Column generators 
+# Helper Functions
 
-def generate_col1_columns(k):
+def build_full_col(cl, chunk1_array, chunk2_array, chunk3_array):
     '''
-    
-    Inputs
+
+    Parameters
     ----------
-    k : Number of digits in binary number
+    cl : index of column being created
+    
+    chunk1_array : List containing all (1, i, j) tuples
+        
+    chunk2_array : List containing all (2, i, j) tuples
+        
+    chunk3_array : List containing all (d, i, j) tuples with d > 2
 
     Returns
     -------
-    col1_dict : A dict containing all A_i_j ops assigned to their columns
+    full_col: List containing all ops in column 'cl'
 
-    '''
-    col1_dict = {}
-    for cl in range(2 * k - 2):
-        col1_entries = []
-        
-        # Case 1: A_i_j does not exist for Col(0)
-        if cl == 0:
-            col1_dict[cl] = col1_entries
-            continue
-        
-        # Case 2: A_i_j from Col(1) to Col(k-1)
-        if 1 <= cl <= k - 1:
-            base_i, base_j = k - cl, k
-            n = 0
-
-        # Case 3: A_i_j from Col(k) to Col(2k - 3)
-        else:  
-            base_i, base_j = 1, 2 * k - 1 - cl
-            n = 0
-            
-        while True:
-            i = base_i + n
-            j = base_j - n
-            if j > i:
-                col1_entries.append([1, i, j])
-                n += 1
-            else:
-                break
-        
-        col1_dict[cl] = col1_entries
-    return col1_dict
-
-def generate_col2_columns(k):
     '''
     
-    Inputs
-    ----------
-    k : Number of digits in binary number
-
-    Returns
-    -------
-    col2_dict : a dict containing all N2_i_j ops assigned to their columns
-
-    '''
-    col2_dict = {}
-    for r in range(2 * k - 2):
-        col2_entries = []
-        
-        # Case 1: N2_i_j does not exist for Col(0) to Col(3)
-        if r < 4:
-            col2_dict[r] = col2_entries
-            continue
-        
-        # Case 2: N2_i_j from Col(4) to Col(k)
-        if r <= k:
-            base_i, base_j = k - r + 1, k
-        
-        # Case 3: N2_i_j from Col(k + 1) to Col(2k-2)
-        else:
-            base_i, base_j = 1, 2 * k - r
-        n = 0
-        
-        while True:
-            i = base_i + n
-            j = base_j - n
-            if j > i:
-                col2_entries.append([2, i, j])
-                n += 1
-            else:
-                break
-        
-        col2_dict[r] = col2_entries
-    return col2_dict
-
-def generate_col3_columns(k, col2_dict):
-    '''
+    c1 = chunk1_array[cl] if cl < len(chunk1_array) else []
+    c2 = chunk2_array[cl] if cl < len(chunk2_array) else []
+    c3 = chunk3_array[cl] if cl < len(chunk3_array) else []
     
-
-    Inputs
-    ----------
-    k : Number of digits in a binary number
-    col2_dict : The dict containing all N2_i_j ops assigned to their column
-
-    Returns
-    -------
-    col3_dict : A dict containing all Nn_i_j ops (n>2) assigned to their 
-                column
-
-    '''
-    col3_dict = {}
-    used_keys = set()
+    full_col = list(c1) + list(c2) + list(c3)
     
-    for r in range(7, 2 * k-2):
-        prev2 = col2_dict.get(r - 1, [])
-        prev3 = col3_dict.get(r - 1, [])
-        target = len(prev2) + len(prev3) - 2
-        
-        if target <= 0:
-            col3_dict[r] = []
-            continue
-        new_entries = []
-        
-        for d, i, j in prev2:
-            key = (d + 1, i, j)
-            if j > i and key not in used_keys:
-                used_keys.add(key)
-                new_entries.append([*key])
-            if len(new_entries) == target:
-                break
-        
-        if len(new_entries) < target:
-            for d, i, j in prev3:
-                key = (d + 1, i, j)
-                if j > i and key not in used_keys:
-                    used_keys.add(key)
-                    new_entries.append([*key])
-                if len(new_entries) == target:
-                    break
-        
-        col3_dict[r] = new_entries
-    return col3_dict
+    return full_col
 
-def generate_all_columns(k):
-    '''
-    
-
-    Inputs
-    ----------
-    k : number of digits in binary number
-
-    Returns
-    -------
-    all_cols : A dict containing all columns and ops for digital logistic map
-
-    '''
-    col1 = generate_col1_columns(k)
-    col2 = generate_col2_columns(k)
-    col3 = generate_col3_columns(k, col2)
-    all_cols = {r: col1.get(r, []) + col2.get(r, []) + col3.get(r, [])
-            for r in range(2 * k - 2)} 
-    return all_cols
-
-# Operator Generators
-
-def generate_aij_dict(k):
-    '''  
-
-    Inputs
-    ----------
-    k : Number of digits in binary number
-
-    Returns
-    -------
-    aij : A python dict containing all A_i_j ops
-
-    '''
-    col1 = generate_col1_columns(k)
-    aij = {}
-    for entries in col1.values():
-        for _, i, j in entries:
-            key = (1,i,j)
-            aij[key] = ( (1,i,j), [] )   # head is itself, no tail
-    return aij
-
-def generate_top_head_dict(k):
-    '''
-    
-    Inputs
-    ----------
-    k : Number of digits in binary number
-    
-    Returns
-    -------
-    top_head : A dict containing the formulas for all N2_i_j ops that appear
-             first in their column
-
-    '''
-    col1 = generate_col1_columns(k)
-    col2 = generate_col2_columns(k)
-    col3 = generate_col3_columns(k, col2)
-    def full_col(r):
-        return col1.get(r,[])+col2.get(r,[])+col3.get(r,[])
-    top_head = {}
-   
-    # Case 1
-    for r in range(4, k+1):
-        i,j = k-r+1, k
-        col = full_col(k-i)
-        if not col: continue
-        head, tail = col[0], col[1:]
-        head_key = (1, head[1], head[2])
-        tail_keys = [(d,i2,j2) for d,i2,j2 in tail]
-        top_head[(2,i,j)] = ( head_key, tail_keys )
-    
-    # Case 2
-    for r in range(k+1, 2*k-2):
-        i,j = 1, 2*k-r
-        col = full_col(2*k-j-1)
-        if not col: continue
-        head, tail = col[0], col[1:]
-        head_key = (1, head[1], head[2])
-        tail_keys = [(d,i2,j2) for d,i2,j2 in tail]
-        top_head[(2,i,j)] = ( head_key, tail_keys )
-    return top_head
-
-def generate_recursive_column_formulas(k):
-    '''
-
-    Inputs
-    ----------
-    k : Number of digits in binary number
-
-    Returns
-    -------
-    rec : A dict containing the formulas for all Nn_i_j ops not in top_head
-
-    '''
-
-    cols = generate_all_columns(k)           
-    top_dict = generate_top_head_dict(k)       
-    aij_dict = generate_aij_dict(k)
-    rec = { **aij_dict, **top_dict }         
-
-    def build_chunk(r_start, r_end):
-        partial = {}
-        for r in range(r_start, r_end):
-            col = cols[r]
-            # 1) find the first depth>1 element that’s in top_parsed
-            head_idx = None
-            head_key = None
-            for idx, (d,i,j) in enumerate(col):
-                key = (d,i,j)
-                if d > 1 and key in top_dict:
-                    head_idx = idx
-                    head_key = key
-                    break
-            if head_idx is None:
-                continue
-
-            # 2) pull its parsed tail_keys
-            _, tail_keys = top_dict[head_key]
-            if not tail_keys:
-                # nothing to expand
-                continue
-
-            # 3) each further entry in this column yields one new formula
-            for off, (d2, i2, j2) in enumerate(col[head_idx+1:], start=1):
-                child_key = (d2, i2, j2)
-                if off <= len(tail_keys):
-                    # use the off‑th head from tail_keys, and the rest as new tail
-                    new_head = tail_keys[off-1]
-                    new_tail = tail_keys[off:]
-                    partial[child_key] = (new_head, new_tail)
-                else:
-                    # ran out of terms ⇒ literal zero
-                    partial[child_key] = (child_key, [])
-
-        return partial
-
-    # --- split work into chunks ---
-    total       = 2*k - 2
-    start, end  = 4, total
-    num_workers = min(32, max(1, end - start))
-    chunk_size  = math.ceil((end - start)/num_workers)
-    ranges = [
-        (start + i*chunk_size, min(start + (i+1)*chunk_size, end))
-        for i in range(num_workers)
-    ]
-
-    # --- run in parallel and merge results ---
-    with ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(build_chunk, rs, re) for rs, re in ranges]
-        for fut in futures:
-            rec.update(fut.result())
-
-    return rec
-
-# Map Generator
-
-@lru_cache(maxsize = 1)
-def generate_parsed_maps(k):
+def build_op_list(aij, dij, k):
     '''
 
     Input
     ----------
-    k : Number of digits in binary number
-        
+    aij : Numpy array of shape (N, 3) containing all (1, i, j) ops
+    
+    dij : Numpy array containing all (d, i, j) ops
+
     Returns
     -------
-    all_cols : A dict containing all columns and ops for digital logistic map
-    aij : A python dict containing all A_i_j ops
-    top_head : A dict containing the formulas for all N2_i_j ops that appear
-             first in their column
-    rec : A dict containing the formulas for all Nn_i_j ops not in top_head
-
+    op_list : List containing all ops 
+        
+    op_to_idx : List containing index for each op in unique_ops
     '''
-    all_cols = generate_all_columns(k)
-    aij = generate_aij_dict(k)
-    top_head = generate_top_head_dict(k)
-    rec = generate_recursive_column_formulas(k)
     
+    # Nnij[r] is a Python list of formulas for that column
+    ops = []
     
-    return (
-      all_cols,            
-      aij,               
-      top_head,        
-      rec    
-    )
+    # All A_ i j entries
+    for row in aij:
+        ops.append((int(row[0]), int(row[1]), int(row[2])))
 
-# Helper Functions
+    # Head of every Nn_i_j formula
+    C = 2*k - 2
+    for cl in range(C):
+        formulas = dij[cl]
+        if not isinstance(formulas, (list, tuple)):
+            continue
+        for head, tails in formulas:
+            d, i, j = head
+            ops.append((d+1, i, j)) 
 
-def label_to_key(label):
+    # Deduplicate & freeze an order
+    ops_list = []
+    seen = set()
+    for op in ops:
+        if op not in seen:
+            seen.add(op)
+            ops_list.append(op)
+
+    op_to_idx = {op: idx for idx, op in enumerate(ops_list)}
+    
+    return ops_list, op_to_idx
+
+def build_op_keys(ops_list):
     '''    
 
     Input
     ----------
-    label : Form A_i_j or N2_i_j
+    ops_list : List containing all ops
+    
+    Returns
+    -------
+    op_keys : Numpy array containing the (d, i, j) key for every op
+
+    '''
+    
+    M = len(ops_list)
+    op_keys = np.empty((M,3), dtype=np.int32)
+    
+    for idx, (d,i,j) in enumerate(ops_list):
+        op_keys[idx,0] = d
+        op_keys[idx,1] = i
+        op_keys[idx,2] = j
+    
+    return op_keys
+
+def build_flattened_formulas(aij, dij, dij_ops, op_to_idx):
+    '''
+
+    Input
+    ----------
+    aij : Numpy array containing all (1, i, j) ops
+    
+    dij : Numpy array containing the formula for all (d, i, j) ops, d > 1
+    
+    dij_ops : Numpy array containing all (d, i, j) ops
+    
+    op_to_idx : List containing index for all ops
 
     Returns
     -------
-    key : Form (d, i, j)
+    entry_op : Numpy array containing a reference for all ops - removes tuples
+               from main loop in Logistic Map - same  function as op_keys but 
+               keep for flexibilty
+        
+    head_idx : Numpy array containing the head for all ops
+        
+    tail_strt : Numpy array that tells you where an entries tail begins in 
+                tail_idxs
+        
+    tail_len : Numpy array containing the lengths of all tails - combined with 
+               tail_strt to identify the tail for every operator
+        
+    tail_idxs : Numpy array containing the index for all ops contained in a 
+                tail
 
     '''
-    if isinstance(label, tuple):
-        return label
+    
+    entries = []
+    
+    # All A_i_j formulas
+    for row in aij:
+        op = (int(row[0]),int(row[1]),int(row[2]))
+        entries.append((op, op, []))
 
-    head, si, sj = label.split("_")
-    if head == "A":
-        return (1, int(si), int(sj))
-    # head is "Nn"
-    d = int(head[1:])
-    return (d, int(si), int(sj))
+    # All the Nn formulas - Problem is here
+    C = len(dij)
+    for cl in range(C):
+        for dij_ops_keys, (head, tails) in zip( dij_ops[cl], dij[cl] ):
+            entries.append((dij_ops_keys, head, tails))
+
+
+    # Convert heads/tails into indices
+    E = len(entries) # Total number of Formulas
+    entry_op  = np.empty(E, dtype=np.int32) 
+    head_idx  = np.empty(E, dtype=np.int32)
+    tail_strt  = np.empty(E, dtype=np.int32)
+    tail_len  = np.empty(E, dtype=np.int32)
+    tail_list = []
+
+    for ei, (op, head, tails) in enumerate(entries):
+        entry_op[ei] = op_to_idx[op]
+        head_idx[ei] = op_to_idx.get(head, -1)  
+        tail_strt[ei] = len(tail_list)
+        tail_len[ei] = len(tails)
+        for t in tails:
+            tail_list.append(op_to_idx[t])
+
+    tail_idxs = np.array(tail_list, dtype=np.int32)
+    
+    return entry_op, head_idx, tail_strt, tail_len, tail_idxs
+
+def build_flatten_columns(all_chunks, op_to_idx):
+    '''
+
+    Inputs
+    ----------
+    all_chunks : Numpy array containing all (d), i, j) ops in each column
+        
+    op_to_idx : List containing index for all ops
+
+    Returns
+    -------
+    col_strt : Numpy array containing the ops that start each column
+        
+    col_len : Numpy array containing the length of each column
+        
+    col_idxs : Numpy array containing a flattened list of all ops_idx ordered 
+               by which col they appear in
+
+    '''
+    
+    C = len(all_chunks)
+    col_strt = np.empty(C, dtype=np.int32)
+    col_len = np.empty(C, dtype=np.int32)
+    ops_flat = []
+
+    for r in range(C):
+        col_strt[r] = len(ops_flat)
+        col_len[r] = len(all_chunks[r])
+        for (d,i,j) in all_chunks[r]:
+            ops_flat.append(op_to_idx[(d,i,j)])
+
+    col_idxs = np.array(ops_flat, dtype=np.int32)
+    
+    return col_strt, col_len, col_idxs
+
+# Column generators
+
+def generate_chunk1_arrays(k):
+    '''
+    
+    Inputs
+    ----------
+    k : Number of digits in binary number
+
+    Returns
+    -------
+    chunk1_array : List containing all (1, i, j) entries
+
+    '''
+    
+    C = 2 * k - 2
+    chunk1_array = [None] * C
+    chunk1_array[0] = []  # placeholder for empty first column
+
+    for cl in range(1, C):
+        col = []
+        
+        # Case 1 - Col(1) to Col(k-1)
+        if 1 <= cl <= k - 1:
+            base_i = k - cl
+            base_j = k
+         
+        # Case 2 - Col(k) to Col(C)
+        else:
+            base_i = 1
+            base_j = 2 * k - 1 - cl
+        
+        for n in range (0, k):
+            i = base_i + n
+            j = base_j - n
+            if i >= j:
+                break
+            else:
+                col.append((1, i, j))
+        
+        # Creating full array
+        chunk1_array[cl] = col if col else []
+
+    return chunk1_array
+  
+def generate_chunk2_arrays(k):
+    '''
+
+    Inputs
+    ----------
+    k : Number of digits in a binary number
+
+    Returns
+    -------
+    chunk2_array : List containing all (2, i, j) operators
+    '''
+    
+    C = 2 * k - 2
+    chunk2_array = [None] * C
+    chunk2_array[0], chunk2_array[1] = [], []
+    chunk2_array[2], chunk2_array[3] = [], [] # placeholder for empty first column
+    
+    for cl in range(4, C):
+        col = []
+        
+        # Case 1 - Col(4) to Col(k)
+        if cl <= k:
+            base_i, base_j = k - cl + 1, k
+        
+        # Case 2 - Col(k) to Col(C)
+        else:
+            base_i, base_j = 1, 2*k - cl
+            
+        n = 0
+        for n in range (0, k):
+            i = base_i + n
+            j = base_j - n
+            if i >= j:
+                break
+            else:
+                col.append((2, i, j))
+                
+        # Creating full array
+        chunk2_array[cl] = col if col else []
+        
+    return chunk2_array
+        
+def generate_chunk3_arrays(k, chunk2_array):  
+    '''
+    
+    Input
+    ----------
+    k : Number of digits in a binary number
+    
+    chunk2_array : List containing all (2, i, j) operators
+
+    Returns
+    -------
+    chunk3_array : List conataining all (d, i, j) operators, d>2
+
+    '''
+    
+    C = 2*k - 2
+    chunk3_array = [None]*C
+    for i in range(min(7, C)):
+        chunk3_array[i] = []
+    used_tuples = set()
+    col = [[] for _ in range(C)]
+    
+    for cl in range(7, C):
+        
+        prev2 = chunk2_array[cl - 1]
+        prev3 = col[cl - 1]
+        target = len(prev2) + len(prev3) - 2
+        
+        if target <= 0:
+            col[cl] = []
+            chunk3_array[cl] = []
+            continue
+        
+        new_entries = []
+        for d, i, j in itertools.chain(prev2, prev3):
+            key = (d + 1, i, j)
+            if j > i and key not in used_tuples:
+                used_tuples.add(key)
+                new_entries.append(key)
+                if len(new_entries) == target:
+                    break
+                    
+        # Creating full array
+        col[cl] = new_entries
+        chunk3_array[cl] = new_entries
+
+    return chunk3_array    
+
+def generate_all_chunks(k):
+    '''
+
+    Input
+    ----------
+    k : Number of digits in binary number
+    
+    Returns
+    -------
+    all_chunks : Numpy array containing all (d, i, j) operators 
+
+    '''
+    
+    chunk1_array = generate_chunk1_arrays(k)
+    chunk2_array = generate_chunk2_arrays(k)
+    chunk3_array = generate_chunk3_arrays(k, chunk2_array)
+    
+    C = 2*k - 2 
+    all_chunks_array= [[] for _ in range(C)]
+    
+    for cl in range(C):
+        # chunk1[r] could be any sequence
+        all_chunks_array[cl] += list(chunk1_array[cl])
+        all_chunks_array[cl] += list(chunk2_array[cl])
+        all_chunks_array[cl] += list(chunk3_array[cl])
+   
+    all_chunks = np.array(all_chunks_array, dtype = object)
+   
+    return all_chunks
+
+# Operator Generators
+
+def generate_aij(k):
+    '''
+
+    Input
+    ----------
+    k : Number of digits in binary number
+
+    Returns
+    -------
+    aij : Numpy array of shape (N, 3) containing all (1, i, j) ops
+
+    '''   
+    chunk1_array = generate_chunk1_arrays(k)
+    
+    # For computing aij
+    aij = []
+    for col in chunk1_array:
+        for (d, i, j) in col:
+            aij.append((d, i, j))
+            
+    aij = np.array(aij, dtype=np.uint32)
+    # ensure shape is (N,3)
+    aij = aij.reshape(-1, 3)
+    
+    return aij
+
+def generate_top_head_array(k):
+    '''
+
+    Inputs
+    ----------
+    k : Number of digits in binary number
+
+    Returns
+    -------
+    top_head_array: List containing the formula for all (2, i, j) ops that 
+                    appear first in their respective column
+
+    '''
+    
+    chunk1_array = generate_chunk1_arrays(k)
+    chunk2_array = generate_chunk2_arrays(k)
+    chunk3_array = generate_chunk3_arrays(k, chunk2_array)
+    
+    C = 2*k - 2
+    top_head_array = [None] * C 
+    top_head_array[0], top_head_array[1] = 0, 0
+    top_head_array[2], top_head_array[3] = 0, 0
+    
+    for cl in range (4, C):
+        ops = build_full_col(cl - 1, chunk1_array, chunk2_array, chunk3_array)
+        
+        head = ops[0]      
+        tails = ops[1:]    
+        d, i, j = head       
+        
+        # Formula for Nn_i_j appears in column beforehand
+        top_head_array[cl] = [ head, tails ]        
+        
+    return top_head_array
+
+def generate_rec_array(k):
+    '''
+
+    Input
+    ----------
+    k : Number of digits in binary number
+
+    Returns
+    -------
+    rec_array : List containing formulas for all (d, i, j) operators not 
+                defined in top_head_array
+
+    '''
+
+    chunk1_array = generate_chunk1_arrays(k)
+    chunk2_array = generate_chunk2_arrays(k)
+    chunk3_array = generate_chunk3_arrays(k, chunk2_array)
+
+    C = 2*k - 2
+    rec_array = [[] for _ in range(C)]
+    
+    for cl in range(4, C):
+        ops = build_full_col(cl - 1, chunk1_array, chunk2_array, chunk3_array)
+        # skip the first one (handled by top_head_array)
+        recs = []
+        
+        if cl == 4:
+            Range = len(ops)
+        else:
+            Range = len(ops) - 2
+        
+        for i in range(1, Range):  
+            head  = ops[i]
+            tails = ops[i+1:]
+            recs.append((head, tails))
+        rec_array[cl] = recs              
+    
+    return rec_array
+
+def generate_dij(all_chunks, top_head_array, rec_array, k):
+    '''
+
+    Inputs
+    ----------
+    all_chunks : numpy array containing all columns and their entries
+        
+    top_head_array : List containing all (2, i, j) ops that appear first in 
+                     their column
+        
+    rec_array : List containing all (d, i, j) ops that do not appear in 
+                top_head_array
+
+    Returns
+    -------
+    dij : Numpy array containing the formulas for all (d, i, j) ops
+    
+    dij_ops : Numpy array containing all (d, i, j) ops
+
+    '''
+    
+    C = 2*k - 2
+    dij_array = [None] * C
+    dij_ops_array = [None] * C
+
+    # walk column by column
+    for cl in range(C):
+        # get the “top” formula if present
+        th = top_head_array[cl]
+        if isinstance(th, (list, tuple)):
+            # wrap into a single‐element list if it's not already one
+            if len(th) == 2 and not isinstance(th[0], list):
+                top_list = [ th ]
+            else:
+                top_list = list(th)
+        else:
+            top_list = []
+            
+        # get the recursive formulas
+        recs = rec_array[cl] if rec_array[cl] is not None else []
+
+        # concatenate
+        dij_array[cl] = top_list + recs
+        
+        # Get operator key for Nn_i_j only
+        dij_ops_array[cl] = [ key for key in all_chunks[cl] if key[0] != 1 ]
+
+    # now turn into a single numpy array of objects
+    dij = np.array(dij_array, dtype=object)
+    dij_ops = np.array(dij_ops_array, dtype = object)
+    
+    return dij, dij_ops
+
+# Map Generator
+
+@lru_cache(maxsize = 2)
+def generate_listed_map(k):
+    
+    all_chunks = generate_all_chunks(k)
+    top_head_array = generate_top_head_array(k)
+    rec_array = generate_rec_array(k)
+    aij = generate_aij(k)
+    dij, dij_ops = generate_dij(all_chunks, top_head_array, rec_array, k)
+    ops_list,op_to_idx = build_op_list(aij, dij, k)
+    op_keys = build_op_keys(ops_list)
+    (entry_op, head_idx, 
+     tail_strt, tail_len, 
+     tail_idxs) = build_flattened_formulas(aij, dij, dij_ops, op_to_idx)
+    col_strt, col_len, col_idxs = build_flatten_columns(all_chunks, op_to_idx)
+    C = 2*k - 2
+    M = len(ops_list)
+    
+    return (op_keys,
+            entry_op,
+            head_idx,
+            tail_strt, tail_len, tail_idxs,
+            col_strt, col_len, col_idxs,
+            C, M)
 
