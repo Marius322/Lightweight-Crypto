@@ -34,16 +34,16 @@ def unwrapped_digital_logistic_map_numba(x, n, k,
     -------
     xN : sequence of float numbers determined by the digitised version of the 
          logistic map
-         
-    A : sequence of bits determined by the digitised version of the logistic  
-        map
+
     '''
     
     # Initialising arrays
+    
     xN = np.zeros(n+1, dtype = np.float64)
     xN[0] = x
     
-    a = a0
+    a = a0.copy()
+    
     depths = op_keys[:, 0]
     i_idx  = op_keys[:, 1] - 1
     j_idx  = op_keys[:, 2] - 1
@@ -102,10 +102,11 @@ def unwrapped_digital_logistic_map_numba(x, n, k,
             # Horner Method
             x = 0.5 * (x + np.float64(XCol[j]))
         
-        xN[it + 1] = x 
-        
         # Set a to be XCol for next iteration
         a[:] = XCol[:k]
+        
+        # Collect Outputs
+        xN[it + 1] = x 
         
         # If we've fallen out of (0,1), stop early
         if x <= 0 or x >= 1:
@@ -158,9 +159,3 @@ def digital_logistic_map_numba(x: float, n: int, k: int):
     )
     
     return xN
-
-x = 0.314
-n = 19
-k = 64
-
-xN = digital_logistic_map_numba(x, n, k)
