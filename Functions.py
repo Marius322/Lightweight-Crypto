@@ -8,6 +8,7 @@ import numpy as np
 from numba import njit, prange
 import Numba_Map_Generator as NMG
 import math
+from functools import lru_cache
 
 def Logistic_map(x, n):
     
@@ -153,6 +154,7 @@ def unwrapped_digital_logistic_map_numba_bits(x, n, k,
                 
     return A
 
+@lru_cache(maxsize = 2)
 def digital_logistic_map_numba_bits(x: float, n: int, k: int):
     """
     Wrapper function that calls the actual digital logistic map with only x, n
@@ -198,27 +200,20 @@ def digital_logistic_map_numba_bits(x: float, n: int, k: int):
     
     return A
 
-def write_bits_seed(bits, x):
-    """
-    bits: 1-D iterable of 0/1 (e.g., list/np.array)
-    x   : base name for the output file; file will be f"{x}.seed"
-    """
+def mix_bits(A, T, d):
+    '''
+    Attempt 2; chop-method
+
+    '''   
+    # Remove first T entries 
+    # Chop off first and last 8 digits
+    # Take in every d entry
+    B = np.empty(A.shape, dtype = np.uint8)
+    B = A[T::d, 8:-8]
     
-    b = np.asarray(bits, dtype=np.uint8).ravel()
+    return B
     
-    # Catching errors
-    if b.size == 0:
-        raise ValueError("No bits provided.")
-    if np.any((b != 0) & (b != 1)):
-        raise ValueError("All elements must be 0 or 1.")
-    
-    bit_str = ''.join('1' if v else '0' for v in b.tolist())
-    
-    fname = f"{x}.seed"
-    with open(fname, 'w', encoding='utf-8') as f:
-        f.write(bit_str)
-    
-    return fname, len(bit_str)
+
 
 
 
