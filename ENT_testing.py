@@ -4,9 +4,34 @@ Runs ENT test for given file
 
 @author: 22391643
 """
-
+import numpy as np
 import math
 from collections import Counter
+
+# Helper Functions
+
+def write_bits_seed(bits, x, k):
+    """
+    bits: 1-D iterable of 0/1 (e.g., list/np.array)
+    x   : base name for the output file; file will be f"{x}.seed"
+    """
+    
+    b = np.asarray(bits, dtype=np.uint8).ravel()
+    
+    # Catching errors
+    if b.size == 0:
+        raise ValueError("No bits provided.")
+    if np.any((b != 0) & (b != 1)):
+        raise ValueError("All elements must be 0 or 1.")
+    
+    bit_str = ''.join('1' if v else '0' for v in b.tolist())
+    
+    k = k -16
+    fname = f"{k}_{x:.3f}.seed"
+    with open(fname, 'w', encoding='utf-8') as f:
+        f.write(bit_str)
+    
+    return fname, len(bit_str)
 
 def bits_to_bytes(bit_str: str):
     '''
@@ -33,6 +58,8 @@ def bits_to_bytes(bit_str: str):
     result = bytes(byte_vals)
     
     return result
+
+# ENT Test
 
 def shannon_entropy(data: bytes):
     """
@@ -154,5 +181,6 @@ def analyse_seed_file(filename: str):
     
     return
 
-analyse_seed_file('Test0.001.seed')
+
+
 
