@@ -7,22 +7,36 @@ Shows Graphed data for Digital logistic Map
 
 import numpy as np
 import matplotlib.pyplot as plt
-import Functions as f
 from Digital_Logistic_Map import digital_logistic_map
-from Numba_Logistic_Map import digital_logistic_map_numba
 
 x = 0.945 # Starting Condition
 n = 100 # Number of Iterations
 k = 64 # Number of digits
 
-# Graphing Accuracy for numba only
+# Logistic Map
+
+def Logistic_map(x, n):
+    
+    #catching errors
+    if x<=0 or x>=1:
+        print('Error')
+    else:
+        X=np.zeros(n+1)
+        X[0]=x
+        for j in range(n):
+             x=4.0*x*(1.0-x)
+             X[j+1]=x
+             
+        return X
+
+# Graphing Accuracy 
 Accuracy = np.arange(0, n+1, dtype = float)
 Range = np.arange(0, n+1)
-Numba_vals = digital_logistic_map_numba(x, n, k)
-Logistic_vals = f.Logistic_map(x, n)
+Digital_vals, _ = digital_logistic_map(x, n, k)
+Logistic_vals = Logistic_map(x, n)
 
 for t in range(len(Accuracy)):
-    Accuracy[t] = Numba_vals[t] - Logistic_vals[t]
+    Accuracy[t] = Digital_vals[t] - Logistic_vals[t]
     
 # Plotting Graph
 plt.plot(Range, Accuracy, 'ro', label = 'Accuracy')
@@ -35,23 +49,19 @@ plt.show()
 
 # Graphing Xn vs Xn+1 for all Logistic Map 
 
-x_vals = f.Logistic_map(x, n)  # one long trajectory
-#x_vals_digital = digital_logistic_map(x, n, k)
-x_vals_digital_numba = digital_logistic_map_numba(x, n, k)
+x_vals = Logistic_map(x, n)  # one long trajectory
+x_vals_digital, _ = digital_logistic_map(x, n, k)
 
 # Plotting Graph    
 
 x_n = x_vals[:-1] # all but last
-#x_n_digital = x_vals_digital[:-1] # all but last
-x_n_digital_numba = x_vals_digital_numba[:-1] # all but last
+x_n_digital = x_vals_digital[:-1] # all but last
 
 x_np1 = x_vals[1:] # all but first
-#x_np1_digital = x_vals_digital[1:] # all but first
-x_np1_digital_numba = x_vals_digital_numba[1:] # all but first
+x_np1_digital = x_vals_digital[1:] # all but first
 
 plt.plot(x_n, x_np1, 'ro', label = 'logistic map')
-#plt.plot(x_n_digital, x_np1_digital, 'bo', label = 'digital logistic map')
-plt.plot(x_n_digital_numba, x_np1_digital_numba, 'go', label = 'numba logistic map')
+plt.plot(x_n_digital, x_np1_digital, 'go', label = 'digital map')
 plt.legend()
 plt.grid()
 plt.xlabel('Xn')
@@ -61,13 +71,13 @@ plt.title('Digital Logistic Map - Xn+1 vs Xn')
 plt.show()   
 
 def one_step_map(x):
-    return f.Logistic_map(x, 1)[-1]  # take the 2nd value: f(x)
+    fmap = Logistic_map(x, 1)[-1] # take the 2nd value: f(x)
+    return fmap  
 
 def one_step_map_for_digital(x):
-    return digital_logistic_map(x, 1, k)[-1]  # take the 2nd value: f(x)
-
-def one_step_map_for_digital_numba(x):
-    return digital_logistic_map_numba(x, 1, k)[-1]  # take the 2nd value: f(x)
+    xN,_ = digital_logistic_map(x, 1, k)  
+    fmap = xN[-1] # take the 2nd value: f(x)
+    return fmap
 
 def cobweb_plot(f, x0, n):
     '''
@@ -106,5 +116,7 @@ def cobweb_plot(f, x0, n):
 # Usage
 
 cobweb_plot(one_step_map, x0=x, n = 100)
-#cobweb_plot(one_step_map_for_digital, x0=x, n=60)
-cobweb_plot(one_step_map_for_digital_numba, x0=x, n= 100)
+cobweb_plot(one_step_map_for_digital, x0=x, n= 100)
+
+
+
