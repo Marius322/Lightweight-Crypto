@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+Converts Bit array to a file
 Runs ENT test for given file
 
-@author: 22391643
+@author: Marius Furtig-Rytterager
 """
 import numpy as np
 import math
@@ -12,8 +13,8 @@ from collections import Counter
 
 def write_bits_seed(bits, x, k):
     """
-    bits: 1-D iterable of 0/1 (e.g., list/np.array)
-    x   : base name for the output file; file will be f"{x}.seed"
+    Takes an array of bits and converts it to file containing x and k and  
+    ending with '.seed', suitable for NIST testing
     """
     
     b = np.asarray(bits, dtype=np.uint8).ravel()
@@ -26,7 +27,6 @@ def write_bits_seed(bits, x, k):
     
     bit_str = ''.join('1' if v else '0' for v in b.tolist())
     
-    k = k -16
     fname = f"{k}_{x:.3f}.seed"
     with open(fname, 'w', encoding='utf-8') as f:
         f.write(bit_str)
@@ -181,6 +181,14 @@ def analyse_seed_file(filename: str):
     
     return
 
+k = 64
+n = 82_000
+X1 = np.linspace(0.011, 0.498, 10)
+X2 = np.linspace(0.523, 0.988, 10)
+X = np.concatenate((X1, X2), axis = 0)
+import Digital_Logistic_Map as DMG
 
-
+for i in range(len(X)):
+    _, A_mixed = DMG.digital_map_mixed(X[i], n, k, c = 6)
+    f, total_bits = write_bits_seed(A_mixed, X[i], k)
 
