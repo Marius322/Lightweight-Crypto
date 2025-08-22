@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Creates the formulas used for digital map
-Automatically includes the left-shift-by-two (drops two columns on left)
-Gives 2k-3 length output
+Generates the arrays/formulas used when computing the Digital Map
 
-@author: 22391643
+@author: Marius Furtig-Rytterager
 """
 
 import numpy as np
@@ -43,7 +41,7 @@ def build_full_col(cl, chunk1_array, chunk2_array, chunk3_array):
 def build_op_list(aij, dij, k):
     '''
 
-    Input
+    Parameters
     ----------
     aij : Numpy array of shape (N, 3) containing all (1, i, j) ops
     
@@ -88,7 +86,7 @@ def build_op_list(aij, dij, k):
 def build_op_keys(ops_list):
     '''    
 
-    Input
+    Parameters
     ----------
     ops_list : List containing all ops
     
@@ -111,7 +109,7 @@ def build_op_keys(ops_list):
 def build_flattened_formulas(aij, dij, dij_ops, op_to_idx):
     '''
 
-    Input
+    Parameters
     ----------
     aij : Numpy array containing all (1, i, j) ops
     
@@ -120,7 +118,7 @@ def build_flattened_formulas(aij, dij, dij_ops, op_to_idx):
     dij_ops : Numpy array containing all (d, i, j) ops
     
     op_to_idx : List containing index for all ops
-
+    
     Returns
     -------
     entry_op : Numpy array containing a reference for all ops - removes tuples
@@ -177,7 +175,7 @@ def build_flattened_formulas(aij, dij, dij_ops, op_to_idx):
 def build_flatten_columns(all_chunks, op_to_idx):
     '''
 
-    Inputs
+    Parameters
     ----------
     all_chunks : Numpy array containing all (d), i, j) ops in each column
         
@@ -214,7 +212,7 @@ def build_flatten_columns(all_chunks, op_to_idx):
 def generate_chunk1_arrays(k):
     '''
     
-    Inputs
+    Parameters
     ----------
     k : Number of digits in binary number
 
@@ -257,7 +255,7 @@ def generate_chunk1_arrays(k):
 def generate_chunk2_arrays(k):
     '''
 
-    Inputs
+    Parameters
     ----------
     k : Number of digits in a binary number
 
@@ -278,7 +276,7 @@ def generate_chunk2_arrays(k):
         if cl <= k:
             base_i, base_j = k - cl + 1, k
         
-        # Case 2 - Col(k) to Col(C)
+        # Case 2 - Col(k) to Col(C - 1)
         else:
             base_i, base_j = 1, 2*k - cl
             
@@ -299,7 +297,7 @@ def generate_chunk2_arrays(k):
 def generate_chunk3_arrays(k, chunk2_array):  
     '''
     
-    Input
+    Parameters
     ----------
     k : Number of digits in a binary number
     
@@ -347,7 +345,7 @@ def generate_chunk3_arrays(k, chunk2_array):
 def generate_all_chunks(k):
     '''
 
-    Input
+    Parameters
     ----------
     k : Number of digits in binary number
     
@@ -379,7 +377,7 @@ def generate_all_chunks(k):
 def generate_aij(k):
     '''
 
-    Input
+    Parameters
     ----------
     k : Number of digits in binary number
 
@@ -405,7 +403,7 @@ def generate_aij(k):
 def generate_top_head_array(k):
     '''
 
-    Inputs
+    Parameters
     ----------
     k : Number of digits in binary number
 
@@ -440,7 +438,7 @@ def generate_top_head_array(k):
 def generate_rec_array(k):
     '''
 
-    Input
+    Parameters
     ----------
     k : Number of digits in binary number
 
@@ -533,6 +531,11 @@ def generate_dij(all_chunks, top_head_array, rec_array, k):
 
 @lru_cache(maxsize = 2)
 def generate_listed_map(k):
+    '''
+    This function generates all the necessary arrays for computing the Digital 
+    Map for a given k, k = number of digits in each binary number
+
+    '''
     
     all_chunks = generate_all_chunks(k)
     top_head_array = generate_top_head_array(k)
