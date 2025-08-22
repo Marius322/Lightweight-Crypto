@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-This is a digital logistic map that works for any k and includes mixed and 
-non-mixed versions
+Contains functions for mixed and unmixed Digital Map 
 
-@author: 22391643
+@author: Marius Furtig-Rytterager
 """
 
 import numpy as np
@@ -11,10 +10,10 @@ import Digital_Map_Generator as DMG
 import math
 from numba import njit, prange
 
-# Unmixed Digital Logistic Map
+# Unmixed Digital Map
 
 @njit
-def unwrapped_digital_logistic_map(x, n, k, 
+def unwrapped_digital_map(x, n, k, 
                                    op_keys,
                                    entry_op,
                                    head_idx,
@@ -22,28 +21,27 @@ def unwrapped_digital_logistic_map(x, n, k,
                                    col_strt, col_len, col_idxs,
                                    C, M, a0):
     '''
-    Digitised version of logistic map that is numba friendly
+    Digitised version of Logistic Map that is numba friendly
     
     Parameters
     ----------
-    x : starting number 
+    x : Seed/ Initial input
     
-    n : number of iterations
+    n : Number of iterations
     
-    k : number of digits in the binary representation of x
+    k : Number of digits in the binary representation of x
     -------
 
     Returns
     -------
-    xN : sequence of float numbers determined by the digitised version of the 
-         logistic map
+    xN : Sequence of float numbers determined by the digitised version of the 
+         Logistic Map
          
-    A : sequence of bits determined by the digitised version of the logistic  
-        map
+    A : Sequence of bits determined by the digitised version of the Logistic  
+        Map
     '''
     
     # Initialising arrays
-    
     xN = np.zeros(n+1, dtype = np.float64)
     xN[0] = x
     
@@ -93,7 +91,7 @@ def unwrapped_digital_logistic_map(x, n, k,
                 for te in range(t_strt, t_strt + t_len): # te = tail entry
                     xor ^= bit_cache[tail_idxs[te]]
                 
-                # Head AND Tail
+                # Compute Head AND Tail for each entry
                 bit_cache[op_id] = bit_cache[h] & xor            
             
             # XOR bit_cache[op_id] along along each column to create XCol
@@ -123,22 +121,21 @@ def unwrapped_digital_logistic_map(x, n, k,
                 
     return xN, A
 
-def digital_logistic_map(x: float, n: int, k: int):
+def digital_map(x: float, n: int, k: int):
     """
-    Wrapper function that calls the actual digital logistic map with only x, n
+    Wrapper function that calls the Digital Map with only x, n
     and k as inputs
     """
    
     # Catching Errors
     if x <= 0 or x >= 1:
         raise ValueError('x must lie between 0 and 1')
-        return
-    if k <= 0:
-        raise ValueError('k must be greater than 0')
-        return
-    if n <= 0:
-        raise ValueError('n must be greater than 1')
-        return
+        
+    if not isinstance(k, int) or k <= 0:
+        raise ValueError('k must be an integer greater than 0')
+        
+    if not isinstance(n, int) or n <= 0:
+        raise ValueError('n must be an integer greater than 0')
     
     # Convert input x to its k-bit fractional binary a[0..k-1]
     a0 = np.zeros(k, dtype = np.uint8)
@@ -156,7 +153,7 @@ def digital_logistic_map(x: float, n: int, k: int):
      col_strt, col_len, col_idxs,
      C, M) = DMG.generate_listed_map(k)
     
-    xN, A = unwrapped_digital_logistic_map(
+    xN, A = unwrapped_digital_map(
         x, n, k,
         op_keys,
         entry_op,
@@ -168,21 +165,35 @@ def digital_logistic_map(x: float, n: int, k: int):
     
     return xN, A
 
-# Mixed Digital Logistic Map
+# Mixed Digital Map
 
 @njit(parallel=True)
 def bits_to_float(A):
+    '''   
+    Helper function that converts a bit array to a float array
+
+    Parameters
+    ----------
+    A : Bit Array
+
+    Returns
+    -------
+    F : Float Array
+
+    '''
     rows, cols = A.shape
-    out = np.empty(rows, dtype=np.float64) # output array
+    F = np.empty(rows, dtype=np.float64) 
     scale = math.ldexp(1.0, -cols) 
+    
     for i in prange(rows):
         acc = np.uint64(0)
         for j in range(cols):
             acc = (acc << 1) | np.uint64(A[i, j])
-        out[i] = acc * scale
-    return out
+        F[i] = acc * scale
+        
+    return F
 
-def digital_logistic_map_mixed(x: float, n: int, k: int, T = 101, p = 5):
+def digital_map_mixed(x: float, n: int, k: int, T = 101, p = 5, c = 8):
     """
     Wrapper function that calls the actual digital logistic map with only x, n
     and k as inputs and mixes the function by chopping off first and last 8 
@@ -191,21 +202,30 @@ def digital_logistic_map_mixed(x: float, n: int, k: int, T = 101, p = 5):
     T : The first T entries in the digital map sequence are terminated
     p : Only every 'p'th entry in the sequence is kept, rest is 
         discarded
+    c : The first and last 'c' digits in each binary number is removed
     """
    
     # Catching Errors
     if x <= 0 or x >= 1:
         raise ValueError('x must lie between 0 and 1')
-        return
-    if k <= 0:
-        raise ValueError('k must be greater than 0')
-        return
-    if n <= 0:
-        raise ValueError('n must be greater than 1')
-        return
+    
+    if not isinstance(n, int) or n <= 0:
+        raise ValueError('n must be an integer greater than 0')    
+    
+    if not isinstance(k, int) or k <= 0:
+        raise ValueError('k must be an integer greater than 0')
+            
+    if not isinstance(T, int) or T >= n:
+        raise ValueError('T must be an integer greater than n')
+        
+    if not isinstance(p, int) or p >= n:
+        raise ValueError('p must be an integer greater than n')
+        
+    if not isinstance(c, int) or 2*c >= k:
+        raise ValueError('c must be an integer and must be smaller than k/2')
     
     # Increase k for future whitening
-    k = k + 16
+    k = k + 2*c
     
     # Convert input x to its k-bit fractional binary a[0..k-1]
     a0 = np.zeros(k, dtype = np.uint8)
@@ -223,7 +243,7 @@ def digital_logistic_map_mixed(x: float, n: int, k: int, T = 101, p = 5):
      col_strt, col_len, col_idxs,
      C, M) = DMG.generate_listed_map(k)
     
-    xN, A = unwrapped_digital_logistic_map(
+    xN, A = unwrapped_digital_map(
         x, n, k,
         op_keys,
         entry_op,
@@ -240,7 +260,7 @@ def digital_logistic_map_mixed(x: float, n: int, k: int, T = 101, p = 5):
     # Remove first T entries 
     # Chop off first and last 8 digits
     # Take in every p entry
-    A_mixed = A[T::p, 8:-8]
+    A_mixed = A[T::p, c:-c]
     
     # Convert new array to float sequence
     xN_mixed = bits_to_float(A_mixed)
