@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Contains functions for mixed and unmixed Digital Map 
+Contains functions for mixed and unmixed Digital Map - A recreation of the 
+Logistic Map that works over binary numbers using XOR and AND
 
 @author: Marius Furtig-Rytterager
 """
@@ -125,6 +126,18 @@ def digital_map(x: float, n: int, k: int):
     """
     Wrapper function that calls the Digital Map with only x, n
     and k as inputs
+    
+    Parameters
+    ----------
+    x : The seed/initial input into the digital map
+    n : The number of iterations
+    k : Number of digits in the binary representation of x 
+    
+    Returns
+    -------
+    xN : A sequence of float numbers determined by the Digital Map
+    A : A sequence of binary numbers determined by the Digital Map
+    
     """
    
     # Catching Errors
@@ -196,13 +209,24 @@ def bits_to_float(A):
 def digital_map_mixed(x: float, n: int, k: int, T = 101, p = 5, c = 8):
     """
     Wrapper function that calls the actual digital logistic map with only x, n
-    and k as inputs and mixes the function by chopping off first and last 8 
-    digits of each binary number
+    and k as inputs and then mixes the function via T, p and c 
     
+    Parameters
+    ----------
+    x : The seed/initial input into the digital map
+    n : The number of iterations
+    k : Number of digits in the binary representation of x
     T : The first T entries in the digital map sequence are terminated
     p : Only every 'p'th entry in the sequence is kept, rest is 
         discarded
     c : The first and last 'c' digits in each binary number is removed
+    
+    Returns
+    -------
+    xN_mixed : A sequence of float numbers determined by the Digital Map after
+               mixing
+    A_mixed : A sequence of binary numbers determined by the Digital Map after
+              mixing   
     """
    
     # Catching Errors
