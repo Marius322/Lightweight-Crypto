@@ -181,14 +181,7 @@ def analyse_seed_file(filename: str):
     
     return
 
-k = 64
-n = 82_000
-X1 = np.linspace(0.011, 0.498, 10)
-X2 = np.linspace(0.523, 0.988, 10)
-X = np.concatenate((X1, X2), axis = 0)
-import Digital_Logistic_Map as DMG
 
-for i in range(len(X)):
-    _, A_mixed = DMG.digital_map_mixed(X[i], n, k, c = 6)
-    f, total_bits = write_bits_seed(A_mixed, X[i], k)
+
+
 
