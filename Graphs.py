@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Contans graphing functions for;
+Contains graphing functions for;
     xn vs xn+1 for Logistic and Digital Map
     Cobweb plot of Logistic and Digital Map
 
@@ -62,6 +62,12 @@ def graph_logistic_map(x, n, save = False):
     Graph of xn vs xn+1 for Logistic Map
 
     '''
+    # Catching Errors
+    if x <= 0 or x >= 1:
+        raise ValueError('x must lie between 0 and 1')
+        
+    if not isinstance(n, int) or n <= 0:
+       raise ValueError('n must an be integer greater than 0')    
     
     # Generating Sequence of Random Numbers for each Map
     x_vals = Logistic_map(x, n)  
@@ -112,6 +118,15 @@ def graph_digital_map(x, n, k, save = False):
     Graph of xn vs xn+1 for Digital Map
 
     '''
+    # Catching Errors
+    if x <= 0 or x >= 1:
+        raise ValueError('x must lie between 0 and 1')
+        
+    if not isinstance(n, int) or n <= 0:
+       raise ValueError('n must an be integer greater than 0')    
+    
+    if not isinstance(k, int) or k <= 0:
+       raise ValueError('k must an be integer greater than 0')
     
     # Generating Sequence of Random Numbers for each Map 
     x_vals_digital, _ = digital_map(x, n, k) 
@@ -162,6 +177,15 @@ def graph_all_maps(x, n, k, save = False):
     xn vs xn+1 for Digital and Logistic Map on same graph
 
     '''
+    # Catching Errors
+    if x <= 0 or x >= 1:
+        raise ValueError('x must lie between 0 and 1')
+        
+    if not isinstance(n, int) or n <= 0:
+       raise ValueError('n must an be integer greater than 0')    
+    
+    if not isinstance(k, int) or k <= 0:
+       raise ValueError('k must an be integer greater than 0')
     
     # Generating Sequence of Random Numbers for each Map 
     x_vals_digital, _ = digital_map(x, n, k) 
@@ -184,7 +208,7 @@ def graph_all_maps(x, n, k, save = False):
     plt.grid()
     plt.xlabel('Xn')
     plt.ylabel('Xn+1')
-    plt.title('Plot of Next State vs Current State for the Logistic Map')
+    plt.title('Plot of Next State vs Current State for the Logistic and Digital Map')
         
     # Add Description
     fig.subplots_adjust(bottom=0.15)
@@ -212,6 +236,10 @@ def one_step_map_logistic(x):
     second_value : Returns the next entry in the Logistic Map
 
     '''
+    # Catching errors
+    if x <= 0 or x >= 1:
+        raise ValueError('x must lie between 0 and 1')
+        
     second_value = Logistic_map(x, 1)[-1] 
     return second_value  
 
@@ -230,6 +258,13 @@ def one_step_map_digital(x, k):
     second_value : Returns the next entry in the Digital Map
 
     '''
+    # Catching errors
+    if x <= 0 or x >= 1:
+        raise ValueError('x must lie between 0 and 1')
+        
+    if not isinstance(k, int) or k <= 0:
+       raise ValueError('k must an be integer greater than 0')
+        
     xN,_ = digital_map(x, 1, k)  
     second_value = xN[-1] 
     return second_value
@@ -253,6 +288,13 @@ def cobweb_plot_logistic(x0, n, save = False):
     Graphs cobweb plot for Logistic Map
 
     '''
+    # Catching errors
+    if x0 <= 0 or x0 >= 1:
+        raise ValueError('x0 must lie between 0 and 1')
+        
+    if not isinstance(n, int) or n <= 0:
+       raise ValueError('n must an be integer greater than 0')
+       
     # Generate x values and f(x)
     x = np.linspace(0.001, 0.999, 500)
     fx_total = np.array([one_step_map_logistic(xi) for xi in x])
@@ -315,6 +357,16 @@ def cobweb_plot_digital(x0, n, k, save = False):
     Graphs cobweb plot for Digital Map
 
     '''   
+    # Catching errors
+    if x0 <= 0 or x0 >= 1:
+        raise ValueError('x0 must lie between 0 and 1')
+        
+    if not isinstance(n, int) or n <= 0:
+       raise ValueError('n must an be integer greater than 0')
+      
+    if not isinstance(k, int) or k <= 0:
+       raise ValueError('k must an be integer greater than 0')
+       
     # Generate x values and f(x)
     x = np.linspace(0.001, 0.999, 500)
     fx_total = np.array([one_step_map_digital(xi, k) for xi in x])
