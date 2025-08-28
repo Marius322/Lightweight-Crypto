@@ -239,14 +239,14 @@ def digital_map_mixed(x: float, n: int, k: int, T = 101, p = 5, c = 8):
     if not isinstance(k, int) or k <= 0:
         raise ValueError('k must be an integer greater than 0')
             
-    if not isinstance(T, int) or T >= n:
-        raise ValueError('T must be an integer greater than n')
-        
-    if not isinstance(p, int) or p >= n:
-        raise ValueError('p must be an integer greater than n')
+    if not (isinstance(T, int) and 0 <= T < n):
+        raise ValueError(f"T must be an integer between 0 and {n-1}")
+    
+    if not (isinstance(p, int) and 1 <= p <= n - T):
+        raise ValueError(f"p must be an integer between 1 and {n-T}")
         
     if not isinstance(c, int) or 2*c >= k:
-        raise ValueError('c must be an integer and must be smaller than k/2')
+        raise ValueError(f"c must be an integer and must be smaller than {k/2}")
     
     # Increase k for future whitening
     k = k + 2*c
@@ -282,7 +282,7 @@ def digital_map_mixed(x: float, n: int, k: int, T = 101, p = 5, c = 8):
     xN_mixed = np.empty(xN.shape, dtype = np.float64)
     
     # Remove first T entries 
-    # Chop off first and last 8 digits
+    # Chop off first and last c digits
     # Take in every p entry
     A_mixed = A[T::p, c:-c]
     
