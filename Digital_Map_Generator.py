@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Generates the arrays/formulas used when computing the Digital Map
+Generates the arrays/formulas used when computing the Digital Map - A 
+recreation of the Logistic Map that works over binary numbers using XOR and AND
 
 @author: Marius Furtig-Rytterager
 """
@@ -51,7 +52,7 @@ def build_op_list(aij, dij, k):
     -------
     op_list : List containing all ops 
         
-    op_to_idx : List containing index for each op in unique_ops
+    op_to_idx : Dict containing index for each op in unique_ops
     '''
     
     # Nnij[r] is a Python list of formulas for that column
@@ -117,7 +118,7 @@ def build_flattened_formulas(aij, dij, dij_ops, op_to_idx):
     
     dij_ops : Numpy array containing all (d, i, j) ops
     
-    op_to_idx : List containing index for all ops
+    op_to_idx : Dict containing index for all ops
     
     Returns
     -------
