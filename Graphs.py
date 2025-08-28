@@ -358,11 +358,3 @@ def cobweb_plot_digital(x0, n, k, save = False):
         
     plt.show()
 
-X = np.array([0.324, 0.617, 0.888])
-k = 64
-
-for i in range(len(X)):
-    cobweb_plot_logistic(x0 = X[i], n = 100, save = True)
-    cobweb_plot_logistic(x0 = X[i], n = 1000, save = True)
-    cobweb_plot_digital(x0 = X[i], n = 100, k = k, save = True)
-    cobweb_plot_digital(x0 = X[i], n = 1000, k = k, save = True)
