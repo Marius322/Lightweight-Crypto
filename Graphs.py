@@ -45,7 +45,7 @@ def Logistic_map(x, n):
 
 # Graphing Xn vs Xn+1 for Logistic and Digital Map 
 
-def graph_logistic_map(x, n, save = False):
+def graph_logistic_map(x, n, description = False, save = False):
     '''
 
     Parameters
@@ -53,6 +53,9 @@ def graph_logistic_map(x, n, save = False):
     x : Seed/Initial Input
     
     n : Number of iterations
+    
+    description : When true, the resulting graph contains a title and short 
+                  description
     
     save : When true, the resulting graph is saved to a svg file.
            Defaults to being false
@@ -79,19 +82,20 @@ def graph_logistic_map(x, n, save = False):
     x_np1 = x_vals[1:] 
 
     # Plotting Graph  
-    
-    fig, _ = plt.subplots(figsize=(6, 6))
+    fig, _ = plt.subplots(figsize=(8,8))
     plt.plot(x_n, x_np1, 'bo', label = 'Logistic Map')
-    plt.legend()
     plt.grid()
-    plt.xlabel('Xn')
-    plt.ylabel('Xn+1')
-    plt.title('Plot of Next State vs Current State for the Logistic Map')
+    plt.xlabel('$x_n$', fontsize=16, labelpad=10)
+    plt.ylabel('$x_{n+1}$', fontsize=16, labelpad=10)
+    plt.title('Plot of Next State vs Current State for the Logistic Map', fontsize=18)
+    plt.tick_params(axis='both', which='major', labelsize=14)
     
-    # Add Description
-    fig.subplots_adjust(bottom=0.15)
-    fig.text(0.5, 0.05, f"Shows the dynamics of the Logistic Map with r = 4 and x = {x}",
-         ha='center', fontsize=10)
+    # Add description if Enabled
+    if description == True:
+        plt.title('Plot of Next State vs Current State for the Logistic Map', fontsize=18)
+        fig.subplots_adjust(bottom=0.17)
+        fig.text(0.5, 0.05, f"Shows the dynamics of the Logistic Map with r = 4, x = {x}",
+             ha='center', fontsize=18)
     
     # Save Plot if Enabled
     if save == True:
@@ -99,7 +103,8 @@ def graph_logistic_map(x, n, save = False):
         
     plt.show() 
 
-def graph_digital_map(x, n, k, save = False):
+def graph_digital_map(x, n, k, description = False, save = False):
+    
     '''
 
     Parameters
@@ -109,6 +114,9 @@ def graph_digital_map(x, n, k, save = False):
     n : Number of iterations
     
     k : Number of digits in each binary number
+    
+    description : When true, the resulting graph contains a title and short 
+                  description
     
     save : When true, the resulting graph is saved to a svg file.
            Defaults to being false
@@ -139,26 +147,27 @@ def graph_digital_map(x, n, k, save = False):
 
     # Plotting Graph  
     
-    fig, _ = plt.subplots(figsize=(6, 6))
+    fig, _ = plt.subplots(figsize=(8, 8))
     plt.plot(x_n_digital, x_np1_digital, 'go', label = 'Digital Map')
-    plt.legend()
     plt.grid()
-    plt.xlabel('Xn')
-    plt.ylabel('Xn+1')
-    plt.title('Plot of Next State vs Current State for the Digital Map')
-        
-    # Add Description
-    fig.subplots_adjust(bottom=0.15)
-    fig.text(0.5, 0.05, f"Shows the dynamics of the Digital Map with r = 4, x = {x} and k = {k}",
-         ha='center', fontsize=10)
+    plt.xlabel('$x_n$', fontsize=16, labelpad=10)
+    plt.ylabel('$x_{n+1}$', fontsize=16, labelpad=10)
+    plt.tick_params(axis='both', which='major', labelsize=14)
     
+    # Add description if Enabled
+    if description == True:
+        plt.title('Plot of Next State vs Current State for the Digital Map', fontsize=18)
+        fig.subplots_adjust(bottom=0.17)
+        fig.text(0.5, 0.05, f"Shows the dynamics of the Digital Map with r = 4, x = {x} and k = {k}",
+             ha='center', fontsize=18)
+        
     # Save Plot if Enabled
     if save == True:
         plt.savefig(f"Digital_Map_xn_vs_xn+1_{x}_{n}_{k}.svg") 
         
     plt.show() 
-
-def graph_all_maps(x, n, k, save = False):
+    
+def graph_all_maps(x, n, k, description = False, save = False):
     '''
 
     Parameters
@@ -168,6 +177,9 @@ def graph_all_maps(x, n, k, save = False):
     n : Number of iterations
     
     k : Number of digits in each binary number
+    
+    description : When true, the resulting graph contains a title and short 
+                  description 
     
     save : When true, the resulting graph is saved to a svg file.
            Defaults to being false
@@ -201,19 +213,21 @@ def graph_all_maps(x, n, k, save = False):
 
     # Plotting Graph  
     
-    fig, _ = plt.subplots(figsize=(6, 6))
-    plt.plot(x_n_digital, x_np1_digital, 'go', label = 'Digital Map')
+    fig, _ = plt.subplots(figsize=(8,8))
     plt.plot(x_n, x_np1, 'bo', label = 'Logistic Map')
-    plt.legend()
+    plt.plot(x_n_digital, x_np1_digital, 'go', label = 'Digital Map')
+    plt.legend(fontsize = 14, loc = "upper left")
     plt.grid()
-    plt.xlabel('Xn')
-    plt.ylabel('Xn+1')
-    plt.title('Plot of Next State vs Current State for the Logistic and Digital Map')
+    plt.xlabel('$x_n$', fontsize=16, labelpad=10)
+    plt.ylabel('$x_{n+1}$', fontsize=16, labelpad=10)
+    plt.tick_params(axis='both', which='major', labelsize=14)
         
-    # Add Description
-    fig.subplots_adjust(bottom=0.15)
-    fig.text(0.5, 0.05, f"Shows the dynamics of the Logistic and Digital Map with r = 4, x = {x} and k = {k}",
-         ha='center', fontsize=10)
+    # Add Description if Enabled
+    if description == True:
+        plt.title('Plot of Next State vs Current State for the Logistic and Digital Map', fontsize=18)
+        fig.subplots_adjust(bottom=0.17)
+        fig.text(0.5, 0.05, f"Shows the dynamics of the Logistic and Digital Map with r = 4, x = {x} and k = {k}",
+             ha='center', fontsize=18)
     
     # Save Plot if enabled
     if save == True:
@@ -271,7 +285,7 @@ def one_step_map_digital(x, k):
 
 # Cobweb Plot for Logistic and Digital Maps
 
-def cobweb_plot_logistic(x0, n, save = False):
+def cobweb_plot_logistic(x0, n, description = False, save = False):
     '''
 
     Parameters
@@ -279,6 +293,9 @@ def cobweb_plot_logistic(x0, n, save = False):
     x0 : Seed/Initial Input
         
     n : Number of iterations
+    
+    description : When true, the resulting graph contains a title and short 
+                  description 
     
     save : When true, the resulting graph is saved to a svg file. 
            Defaults to being false
@@ -299,8 +316,8 @@ def cobweb_plot_logistic(x0, n, save = False):
     x = np.linspace(0.001, 0.999, 500)
     fx_total = np.array([one_step_map_logistic(xi) for xi in x])
 
-    fig, _ = plt.subplots(figsize=(6, 6))
-    plt.plot(x, fx_total, label='f(x)') # Graph of Logistic Map
+    fig, _ = plt.subplots(figsize=(8,8))
+    plt.plot(x, fx_total, label='f(x)', color = "purple") # Graph of Logistic Map
     plt.plot(x, x, 'k--', label='y = x')  # Diagonal Line
 
     # Initialize cobweb path, starting from (x0, 0)
@@ -321,16 +338,17 @@ def cobweb_plot_logistic(x0, n, save = False):
     
     # Graph Cobweb Plot
     plt.plot(x_vals, fx_vals, color='blue', lw=1, label='Cobweb Path')
-    plt.title('Cobweb Plot of Logistic Map')
-    plt.xlabel('$x_n$')
-    plt.ylabel('$x_{n+1}$')
-    plt.legend()
+    plt.xlabel('$x_n$', fontsize=16, labelpad=10)
+    plt.ylabel('$x_{n+1}$', fontsize=16, labelpad=10)
+    plt.legend(fontsize = 14, loc = "upper left")
     plt.grid(True)
     
-    # Add Description
-    fig.subplots_adjust(bottom=0.15)
-    fig.text(0.5, 0.05, f"Displays the cobweb plot of the Logistic Map with r = 4 and x = {x0}",
-         ha='center', fontsize=10)
+    # Add Description if Enabled
+    if description == True:
+        plt.title('Cobweb Plot of Logistic Map')
+        fig.subplots_adjust(bottom=0.17)
+        fig.text(0.5, 0.05, f"Displays the cobweb plot of the Logistic Map with r = 4 and x = {x0}",
+             ha='center', fontsize=18)
     
     # Save Plot if enabled
     if save == True:
@@ -338,7 +356,7 @@ def cobweb_plot_logistic(x0, n, save = False):
         
     plt.show()
 
-def cobweb_plot_digital(x0, n, k, save = False):
+def cobweb_plot_digital(x0, n, k, description = False, save = False):
     '''
 
     Parameters
@@ -348,6 +366,9 @@ def cobweb_plot_digital(x0, n, k, save = False):
     n : Number of iterations
     
     k : Number of digits in each binary number
+    
+    description : When true, the resulting graph contains a title and short 
+                  description 
     
     save : When true, the resulting graph is saved to a svg file. 
            Defaults to being false 
@@ -371,8 +392,8 @@ def cobweb_plot_digital(x0, n, k, save = False):
     x = np.linspace(0.001, 0.999, 500)
     fx_total = np.array([one_step_map_digital(xi, k) for xi in x])
 
-    fig, _ = plt.subplots(figsize=(6, 6))
-    plt.plot(x, fx_total, label='f(x)') # Graph of Digital Map
+    fig, _ = plt.subplots(figsize=(8,8))
+    plt.plot(x, fx_total, label='f(x)', color = "purple") # Graph of Digital Map
     plt.plot(x, x, 'k--', label='y = x')  # Diagonal Line
 
     # Initialize cobweb path, starting from (x0, 0)
@@ -393,16 +414,17 @@ def cobweb_plot_digital(x0, n, k, save = False):
     
     # Graph Cobweb Plot
     plt.plot(x_vals, fx_vals, color='green', lw=1, label='Cobweb Path')
-    plt.title('Cobweb Plot of Digital Map')
-    plt.xlabel('$x_n$')
-    plt.ylabel('$x_{n+1}$')
-    plt.legend()
+    plt.xlabel('$x_n$', fontsize=16, labelpad=10)
+    plt.ylabel('$x_{n+1}$', fontsize=16, labelpad=10)
+    plt.legend(fontsize = 14, loc = "upper left")
     plt.grid(True)
     
-    # Add Description
-    fig.subplots_adjust(bottom=0.15)
-    fig.text(0.5, 0.05, f"Displays the cobweb plot of the Digital Map with r = 4, x = {x0} and k = {k}",
-         ha='center', fontsize=10)
+    # Add Description if Enabled
+    if description == True:
+        plt.title('Cobweb Plot of Logistic Map')
+        fig.subplots_adjust(bottom=0.17)
+        fig.text(0.5, 0.05, f"Displays the cobweb plot of the Digital Map with r = 4, x = {x0} and k = {k}",
+             ha='center', fontsize=18)
     
     # Save Plot if enabled
     if save == True:
