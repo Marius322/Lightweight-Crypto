@@ -291,3 +291,42 @@ def digital_map_mixed(x: float, n: int, k: int, T = 101, p = 5, c = 8):
     
     return xN_mixed, A_mixed
 
+# Create bit-file
+
+def write_bits_seed(bits, x: int, k: int):
+    """
+    Converts a Numpy array to a bit file ending with '.seed'
+
+    Parameters
+    ----------
+    bits : A Numpy array containing binary numbers
+        
+    x : The seed of the Numpy array - first 3 digits used for naming
+        
+    k : Length of binary number - used for naming
+        
+    Returns
+    -------
+    fname : file containing array of bits ending with .seed
+    
+    no_bits : Number of bits in the file
+    """
+    
+    # Convert bits to flattened Numpy array 
+    b = np.asarray(bits, dtype=np.uint8).ravel()
+    
+    # Catching errors
+    if b.size == 0:
+        raise ValueError("No bits provided.")
+    if np.any((b != 0) & (b != 1)):
+        raise ValueError("All elements must be 0 or 1.")
+    
+    bit_str = ''.join('1' if v else '0' for v in b.tolist())
+    no_bits = len(bit_str)
+    
+    fname = f"{k}_{x:.3f}.seed"
+    with open(fname, 'w', encoding='utf-8') as f:
+        f.write(bit_str)
+    
+    return fname, no_bits
+
